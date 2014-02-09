@@ -4,20 +4,64 @@
 #include <iostream>
 #include "attribute.h"
 
-Table::Table(vector<Attribute> _attributes){
-	
+
+Table::Table(vector<Attribute> _attributes, string _NAME)
+{
+
 	attributes = _attributes;
+	name = _NAME;
 
 }
 
-void Table::pushBackRow(vector<string> _newRow){
-	
+
+void Table::pushBackRow(vector<string> _newRow)
+{
+
 	if (attributes.size() == _newRow.size()){
-	
+
 		rows.push_back(_newRow);
 	}
 
 }
+
+//***************************************************** ACCESSORS **********************************************************
+string Table::getTableName()
+{
+	return name;
+}
+
+int Table::getNumRows()
+{
+	return rows.size();
+}
+
+int Table::getNumAttrs()
+{
+	return attributes.size();
+}
+
+string Table::attrNameAt(int loc)
+{
+	return attributes[loc].getName();
+}
+
+string Table::getRowAttr(int rowLoc, int attrLoc)
+{
+	return rows[rowLoc][attrLoc];
+}
+
+string Table::attrKeyAt(int loc)
+{
+	return attributes[loc].getKeyType();
+}
+
+//**************************************************** MODIFIERS ***********************************************************
+void Table::setAttrNameAt(int loc, string _newname)
+{
+	attributes[loc].setName(_newname);
+}
+
+//**************************************************** PRINT FUNCTIONS *****************************************************
 void Table::printTable(Table _table){
 
 	int numRows;
@@ -26,21 +70,21 @@ void Table::printTable(Table _table){
 	numRows = row.size();
 	_table.printAttVec(_table);
 	cout << endl << endl;
-		for (int w = 0; w < numRows; w++){
-			_table.printRow(row[w]);
-			cout << endl;
-		}
-	
+	for (int w = 0; w < numRows; w++){
+		_table.printRow(row[w]);
+		cout << endl;
 	}
+
+}
 
 void Table::printRow(vector<string> _row){
 	int numElems;
 	vector<string> rower = _row;
 	numElems = rower.size();
-		for (int q = 0; q < numElems; q++){
-			cout << rower[q] << "     ";
+	for (int q = 0; q < numElems; q++){
+		cout << rower[q] << "     ";
 
-		}
+	}
 
 }
 
