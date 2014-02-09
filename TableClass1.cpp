@@ -8,10 +8,13 @@
 bool testing = true;
 
 void crossProduct(Table _table1, Table _table2);
+vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name);
+vector<Table> dropTable(vector<Table> _tablist, string _name);
 void renameAttr(Table &_table, Attribute _attr, string _newName);
 
 int main(int argc, _TCHAR* argv[])
 {
+	vector<Table> tableList;
 	//Table 1 Test: ORDER TABLE
 	Attribute order_id("order_id", "int", "primary key");
 	Attribute order_paymentMethod("order_paymentMethod", "string");
@@ -51,6 +54,14 @@ int main(int argc, _TCHAR* argv[])
 	user_table.printTable(user_table);
 
 	crossProduct(order_table, user_table);
+	tableList.push_back(user_table);
+	tableList.push_back(order_table);
+	cout << "table List size: " << tableList.size() << endl;
+	tableList = createTable(tableList, user_attributes, "newTable");
+	cout << "new tablist size: " << tableList.size() << endl;
+
+
+	
 
 	return 1;
 }
@@ -124,5 +135,38 @@ void renameAttr(Table &_table, Attribute _attr, string _newName)
 	else if (testing)
 	{
 		std::cout << "Successfully changed name of attribute." << endl;
+	}
+}
+//create table function in thje list of operating functions 
+vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name){
+	Table newTab(_attr, _name);
+	_tablist.push_back(newTab);
+	return _tablist;
+
+}
+
+//function to remove a table from the list of operating tables
+vector<Table> dropTable(vector<Table> _tablist, string _name){
+	int listSize = _tablist.size();
+	if (listSize == 0){
+		cout << "dropTable called on empty Table vector!" << endl; 
+		return _tablist;
+	}
+	else{
+		string tableName;
+		int perp = 0;
+		bool found = false;
+		cout << "size of list: " << listSize << endl;
+		for (int x = 0; x < listSize; x++){
+			tableName = _tablist[x].name;
+			if (_name == tableName)
+				perp = x;
+				found = true;
+		}
+		if (found == true){
+		_tablist.erase(_tablist.begin() + perp);
+		cout << "size after erase: " << _tablist.size();
+		}
+		return _tablist;
 	}
 }
