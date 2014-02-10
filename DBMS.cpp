@@ -35,7 +35,7 @@ int main(int argc, _TCHAR* argv[])
 
 	//setUnion(tableA, tableB);
 
-	naturalJoin(tableA, tableB, privilege_level);
+	Table nj = naturalJoin(tableA, tableB, privilege_level);
 
 
 	return 0;
