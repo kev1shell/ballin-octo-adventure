@@ -99,3 +99,12 @@ void Table::printAttVec(Table _table){
 	}
 
 }
+
+Table& Table::operator=(Table& table){
+
+	Table newTable(table.attributes, table.name);
+	newTable.rows = table.rows;
+
+	return newTable;
+
+}
