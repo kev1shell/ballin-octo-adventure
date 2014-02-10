@@ -8,6 +8,7 @@
 bool testing = true;
 
 void crossProduct(Table _table1, Table _table2);
+void projection(Table _table, string _attrName);
 vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name);
 vector<Table> dropTable(vector<Table> _tablist, string _name);
 void renameAttr(Table &_table, Attribute _attr, string _newName);
@@ -54,14 +55,8 @@ int main(int argc, _TCHAR* argv[])
 	user_table.printTable(user_table);
 
 	crossProduct(order_table, user_table);
-	tableList.push_back(user_table);
-	tableList.push_back(order_table);
-	cout << "table List size: " << tableList.size() << endl;
-	tableList = createTable(tableList, user_attributes, "newTable");
-	cout << "new tablist size: " << tableList.size() << endl;
-
-
-	
+	projection(user_table, "user_id");
+	projection(user_table, "user_name");
 
 	return 1;
 }
@@ -115,6 +110,35 @@ void crossProduct(Table _table1, Table _table2)
 			cout << endl;
 		}
 	}
+}
+
+void projection(Table _table, string _attrName){
+	int desired;
+	bool match = false;
+	vector<vector<string>> rowList;
+	vector<Attribute> atts;
+	vector<string> names;
+	atts = _table.attributes;
+	rowList = _table.rows;
+	int numRows = rowList.size();
+	int attSize = atts.size();
+	for (int x = 0; x < attSize; x++){
+		names.push_back(atts[x].name);
+	}
+	for (int y = 0; y < attSize; y++){
+		if (_attrName == names[y]){
+			desired = y;
+			match = true;
+		}
+	}
+	if (match = true){
+		cout << "desired attribute: " << _attrName << endl;
+		for (int z = 0; z < numRows; z++){
+			cout << rowList[z][desired] << endl;
+			}
+	}
+	else cout << "desired attribute not in table" << endl;
+
 }
 
 void renameAttr(Table &_table, Attribute _attr, string _newName)
