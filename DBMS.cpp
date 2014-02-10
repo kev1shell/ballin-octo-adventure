@@ -31,9 +31,9 @@ int main(int argc, _TCHAR* argv[])
 
 	//tableA.printTable(tableA);
 
-	setUnion(tableA, tableB);
+	//setUnion(tableA, tableB);
 
-
+	naturalJoin(tableA, tableB, privilege_level);
 
 
 	return 0;
