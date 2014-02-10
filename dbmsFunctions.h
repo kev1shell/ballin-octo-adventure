@@ -13,7 +13,7 @@ namespace dbmsFunctions{
 		return ss.str();//return a string with the contents of the stream
 	}
 	
-	void setUnion(Table& tableA, Table& tableB){
+	Table setUnion(Table& tableA, Table& tableB){
 		
 		Table result(tableA.attributes, "setUnion of " + tableA.name + tableB.name);
 
@@ -23,7 +23,7 @@ namespace dbmsFunctions{
 		//ensure both tables have equal number of attributes
 		if (tableA.attributes.size() != tableB.attributes.size()){
 			cout << "Set Union Failed: attribute mismatch" << endl;
-			return;
+			return result;
 		}
 
 		//if table sizes are unequal, find larger table
@@ -38,7 +38,7 @@ namespace dbmsFunctions{
 
 		if (longTable == NULL || shortTable == NULL){
 			cout << "Set Union Failed: Table pointer error" << endl;
-			return;
+			return result;
 		}
 
 		for (int i = 0; i < longTable->rows.size(); i++){
@@ -87,12 +87,11 @@ namespace dbmsFunctions{
 			
 		}
 
-
+		return result;
 		
-
 	}
 
-	void naturalJoin(Table& tableA, Table& tableB, Attribute attribute){
+	Table naturalJoin(Table& tableA, Table& tableB, Attribute attribute){
 
 		vector<Attribute> attributeList;
 
@@ -162,7 +161,8 @@ namespace dbmsFunctions{
 			}
 
 		}
-
+		
+		return result;
 	}
 
 };
