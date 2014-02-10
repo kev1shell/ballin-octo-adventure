@@ -9,6 +9,7 @@ bool testing = true;
 
 void crossProduct(Table _table1, Table _table2);
 void projection(Table _table, string _attrName);
+void setDifference(Table _tab1, Table _tab2);
 vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name);
 vector<Table> dropTable(vector<Table> _tablist, string _name);
 void renameAttr(Table &_table, Attribute _attr, string _newName);
@@ -40,7 +41,7 @@ int main(int argc, _TCHAR* argv[])
 	vector<Attribute> user_attributes = { user_id, user_name, privilege_level };
 
 	Table user_table(user_attributes, "User Table");
-
+	Table user_table2(user_attributes, "User Table 2");
 	vector<string> newRow = { "0", "Bobby", "admin" };
 	vector<string> newer = { "1", "Will", "guest" };
 	vector<string> newest = { "2", "John", "guest" };
@@ -57,6 +58,8 @@ int main(int argc, _TCHAR* argv[])
 	crossProduct(order_table, user_table);
 	projection(user_table, "user_id");
 	projection(user_table, "user_name");
+	setDifference(user_table, order_table);
+	setDifference(order_table, user_table);
 
 	return 1;
 }
@@ -112,6 +115,7 @@ void crossProduct(Table _table1, Table _table2)
 	}
 }
 
+// print the same attribute from every row of a table
 void projection(Table _table, string _attrName){
 	int desired;
 	bool match = false;
@@ -141,6 +145,45 @@ void projection(Table _table, string _attrName){
 
 }
 
+// What does table 1 hold, that table 2 is missing
+void setDifference(Table _tab1, Table _tab2){
+	bool match = true;
+	bool rowMatch = false;
+	int numAtt = _tab1.attributes.size();
+	int numAtt2 = _tab2.attributes.size();
+	int numRow1 = _tab1.rows.size();
+	int numRow2 = _tab2.rows.size();
+	vector<vector<string>> RowN = _tab1.rows;
+	vector<vector<string>> RowN2 = _tab2.rows;
+	vector<vector<string>> out;
+	vector<string> temp;
+	int outSize;
+	int rowSize;
+	int tempSize;
+
+	for (int r = 0; r < numRow1; r++){
+		for (int q = 0; q < numRow2; q++){
+			if (RowN[r] == RowN2[q]){
+				rowMatch = true;
+			}
+		}
+		if (rowMatch == false){
+			out.push_back(RowN[r]);
+		}
+	}
+	outSize = out.size();
+	cout << "Set Difference between: " << _tab1.name << " & " << _tab2.name << endl;
+	for (int p = 0; p < outSize; p++){
+		temp = out[p];
+		tempSize = temp.size();
+		for (int h = 0; h < tempSize; h++){
+			cout << temp[h] << "     " ;
+		}
+		cout << endl;
+	}
+}
+
+
 void renameAttr(Table &_table, Attribute _attr, string _newName)
 {
 	bool found = false;
@@ -161,7 +204,8 @@ void renameAttr(Table &_table, Attribute _attr, string _newName)
 		std::cout << "Successfully changed name of attribute." << endl;
 	}
 }
-//create table function in thje list of operating functions 
+
+//create table function in the list of operating functions 
 vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name){
 	Table newTab(_attr, _name);
 	_tablist.push_back(newTab);
