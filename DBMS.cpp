@@ -37,7 +37,6 @@ int main(int argc, _TCHAR* argv[])
 
 	Table nj = naturalJoin(tableA, tableB, privilege_level);
 
-
 	return 0;
 }
 
