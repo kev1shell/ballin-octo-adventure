@@ -350,4 +350,26 @@ namespace dbmsFunctions{
 		}
 	}
 
+	void select(Table table, Attribute attribute, string findthis)
+	{
+		int i = 0;
+		int q = 0;
+		for (int j = 0; j<table.attributes.size(); j++)
+		{
+			if (table.attributes[j].name == attribute.name&&table.attributes[j].type == attribute.type)
+			{
+				q = j;
+			}
+		}
+		while (i<table.rows.size())
+		{
+
+			if (table.rows[i][q] == findthis)
+			{
+				table.printRow(table.rows[i]);
+			}
+			i++;
+		}
+	}
+
 };
