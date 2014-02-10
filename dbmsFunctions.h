@@ -15,7 +15,7 @@ namespace dbmsFunctions{
 	
 	void setUnion(Table& tableA, Table& tableB){
 		
-		Table result(tableA.attributes);
+		Table result(tableA.attributes, "setUnion of " + tableA.name + tableB.name);
 
 		Table* longTable;
 		Table* shortTable;
@@ -54,7 +54,7 @@ namespace dbmsFunctions{
 
 			if (result.rows.size() == 0){
 				
-result.rows.push_back(currentRow);
+				result.rows.push_back(currentRow);
 				continue;
 			}
 
@@ -128,7 +128,7 @@ result.rows.push_back(currentRow);
 		}
 		//-------
 
-		Table result(attributeList);
+		Table result(attributeList, "naturalJoin of " + tableA.name + tableB.name);
 
 		for (int i = 0; i < tableA.rows.size(); i++){
 

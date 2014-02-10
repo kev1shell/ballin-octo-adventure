@@ -14,8 +14,8 @@ int main(int argc, _TCHAR* argv[])
 
 	vector<Attribute> attributeList = { user_id, user_name, privilege_level };
 
-	Table tableA(attributeList);
-	Table tableB(attributeList);
+	Table tableA(attributeList, "tableA");
+	Table tableB(attributeList, "tableB");
 
 	vector<string> newRow = { "0", "Bobby", "admin" };
 	vector<string> newer = { "1", "Will", "guest" };
