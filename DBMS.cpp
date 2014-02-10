@@ -29,6 +29,8 @@ int main(int argc, _TCHAR* argv[])
 	tableB.pushBackRow(newRow2);
 	tableB.pushBackRow(newer2);
 
+	Table tableC = tableA; //<------- Holy shit it worked
+
 	//tableA.printTable(tableA);
 
 	//setUnion(tableA, tableB);
