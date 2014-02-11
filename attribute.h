@@ -13,7 +13,7 @@ public:
 	string keyType;		//keyType = primary key, foreign key, or attribute
 	Attribute(string _name, string _type);
 	Attribute(string _name, string _type, string _keyType);
-	
+
 	//Print
 	void printAttribute(Attribute _att);
 

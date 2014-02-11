@@ -1,4 +1,7 @@
 #include "stdafx.h"
+
+#include <stdio.h>
+#include <tchar.h>
 #include "Table.h"
 #include <stdio.h>
 #include <iostream>
@@ -44,6 +47,20 @@ int Table::getNumAttrs()
 	return attributes.size();
 }
 
+string Table::getPrimaryKey(int rowLoc)
+{
+	//IF TABLE HAS MULTIPLE PRIMARY KEYS THIS APPENDS THE KEYS
+	string primaryKey = "";
+	for (int x = 0; x < getNumAttrs(); x++)
+	{
+		if (attributes[x].getKeyType() == "primary key")
+		{
+			primaryKey += rows[rowLoc][x];
+		}
+	}
+	return primaryKey;
+}
+
 string Table::attrNameAt(int loc)
 {
 	return attributes[loc].getName();
@@ -59,10 +76,29 @@ string Table::attrKeyAt(int loc)
 	return attributes[loc].getKeyType();
 }
 
+string Table::attrTypeAt(int loc)
+{
+	return attributes[loc].getType();
+}
+
+vector<vector<string>> Table::getRows()
+{
+	return rows;
+}
 //**************************************************** MODIFIERS ***********************************************************
 void Table::setAttrNameAt(int loc, string _newname)
 {
 	attributes[loc].setName(_newname);
+}
+
+void Table::updateVal(int rowLoc, int attrLoc, string newValue)
+{
+	rows[rowLoc][attrLoc] = newValue;
+}
+
+void Table::deleteRowAtLoc(int rowloc)
+{
+	rows.erase(rows.begin() + rowloc);
 }
 
 //**************************************************** PRINT FUNCTIONS *****************************************************

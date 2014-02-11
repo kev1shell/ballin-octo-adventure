@@ -1,4 +1,7 @@
 #include "stdafx.h"
+
+#include <stdio.h>
+#include <tchar.h>
 #include "attribute.h"
 #include <iostream>
 
