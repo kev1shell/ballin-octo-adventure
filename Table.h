@@ -19,7 +19,6 @@ public:
 	void pushBackRow(vector<string> _newRow);
 
 	//Accessors
-	vector<vector<string>> getRows();
 	string getTableName();
 	int getNumRows();
 	int getNumAttrs();

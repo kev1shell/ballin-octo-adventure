@@ -415,4 +415,52 @@ namespace dbmsFunctions{
 		return result;
 	}
 
+	//udates a value in a single cell in a table
+	void updateValue(Table &_table, string rowPrimaryKey, Attribute _attr, string newValue)
+	{
+		int rowloc, attrloc;
+		for (int x = 0; x < _table.getNumRows(); x++)
+		{
+			//find location in row vector of item requested using primary key
+			if (_table.getPrimaryKey(x) == rowPrimaryKey)
+			{
+				rowloc = x;
+				break;
+			}
+		}
+
+		for (int x = 0; x < _table.getNumAttrs(); x++)
+		{
+			if (_attr.getKeyType() == _table.attrKeyAt(x) && _attr.getName() == _table.attrNameAt(x) && _attr.getType() == _table.attrTypeAt(x))
+			{
+				attrloc = x;
+				break;
+			}
+		}
+
+		_table.updateVal(rowloc, attrloc, newValue);
+	}
+
+	//inserts one row into a table
+	void insertRow(Table &_table, vector <string> addRow)
+	{
+		_table.pushBackRow(addRow);
+	}
+
+	//deletes a row from a table 
+	void deleteRow(Table &_table, string primaryKey)
+	{
+		int rowloc;
+		for (int x = 0; x < _table.getNumRows(); x++)
+		{
+			//find location in row vector of item requested using primary key
+			if (_table.getPrimaryKey(x) == primaryKey)
+			{
+				rowloc = x;
+				break;
+			}
+		}
+		_table.deleteRowAtLoc(rowloc);
+	}
+
 };

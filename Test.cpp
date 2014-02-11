@@ -28,6 +28,7 @@ vector<string> row3 = { "2", "John", "guest" };
 //All Rows related to orders
 vector<string> row4 = { "0", "credit" };
 vector<string> row5 = { "1", "counterfit?" };
+vector<string> row5b = { "2", "Yen?" };
 
 //All Rows Related to Join
 vector<string> row6 = { "0", "12" };
@@ -103,4 +104,34 @@ int main(int argc, _TCHAR* argv[]){
 	cout << "current number of tables: " << tableList.size() << endl;
 	tableList = dropTable(tableList, "User Table");
 	cout << endl << endl;
+
+	//select test
+	cout << "testing select function" << endl;
+	cout << "selecting all users from User Table with ID less than 2" << endl;
+	Table result = select(user_table, user_id, "2", '<');
+	result.printTable(result);
+	cout << endl;
+
+	//update value
+	cout << "testing update table" << endl;
+	cout << "changing username from will to Yin" << endl;
+	updateValue(user_table, "1", user_name, "Yin");
+	user_table.printTable(user_table);
+	cout << endl;
+
+	//insert test
+	cout << "testing insert function" << endl;
+	cout << "inserting row into Order Table" << endl;
+	insertRow(order_table, row5b);
+	order_table.printTable(order_table);
+	cout << endl;
+
+
+	//delete test
+	cout << "testing delete function" << endl;
+	cout << "deleting previously inserted row from Order Table" << endl;
+	deleteRow(order_table, "2");
+	order_table.printTable(order_table);
+	cout << endl;
+
 }

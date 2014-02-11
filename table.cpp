@@ -28,9 +28,6 @@ void Table::pushBackRow(vector<string> _newRow)
 }
 
 //***************************************************** ACCESSORS **********************************************************
-vector<vector<string>> Table::getRows(){
-	return rows;
-}
 
 string Table::getTableName()
 {
