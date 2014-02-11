@@ -100,7 +100,7 @@ namespace dbmsFunctions{
 
 		vector<Attribute> attributeList;
 
-		Attribute NJkey("NJID", "int");	//this will be the key of the resulting table
+		Attribute NJkey("NJID", "int", "primary key");	//this will be the key of the resulting table
 
 		attributeList.push_back(NJkey);	
 		attributeList.push_back(attribute);
@@ -350,26 +350,70 @@ namespace dbmsFunctions{
 		}
 	}
 
-	void select(Table table, Attribute attribute, string findthis)
-	{
-		int i = 0;
-		int q = 0;
-		for (int j = 0; j<table.attributes.size(); j++)
-		{
-			if (table.attributes[j].name == attribute.name&&table.attributes[j].type == attribute.type)
-			{
-				q = j;
-			}
-		}
-		while (i<table.rows.size())
-		{
 
-			if (table.rows[i][q] == findthis)
-			{
-				table.printRow(table.rows[i]);
+	Table select(Table table, Attribute attribute, string findthis, char opp)
+	{
+		Table result(table.attributes, "selectResult");
+
+		//find which attribute of table is the condition attribute
+		int attributeIndex = 0;
+		
+		for (int i = 0; i < table.attributes.size(); i++){
+			if (table.attributes[i].getName() == attribute.getName()){
+				attributeIndex = i;
 			}
-			i++;
 		}
+
+		//determin which type of select todo
+		if (opp == '='){
+			for (int i = 0; i < table.getNumRows(); i++){
+				
+				vector<string> currentRow = table.getRows()[i];
+
+				if (currentRow[attributeIndex] == findthis){
+					
+					result.pushBackRow(currentRow);
+
+				}
+			}
+		}
+		else if (opp == '>'){
+			
+			if (attribute.getType() == "int"){
+				
+				int target = atoi(findthis.c_str());
+
+				for (int i = 0; i < table.getNumRows(); i++){
+
+					vector<string> currentRow = table.getRows()[i];
+
+					int data = atoi(currentRow[attributeIndex].c_str());
+					
+					if (data > target){
+						result.pushBackRow(currentRow);
+					}
+				}
+			}
+
+		}
+		else if (opp == '<'){
+			if (attribute.getType() == "int"){
+
+				int target = atoi(findthis.c_str());
+
+				for (int i = 0; i < table.getNumRows(); i++){
+
+					vector<string> currentRow = table.getRows()[i];
+
+					int data = atoi(currentRow[attributeIndex].c_str());
+
+					if (data < target){
+						result.pushBackRow(currentRow);
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 };

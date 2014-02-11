@@ -10,7 +10,7 @@ class Attribute{
 public:
 	string name;		//stores value
 	string type;		//type = int, string, double, char...
-	string keyType;		//keyType = primary key, foreign key, or attr
+	string keyType;		//keyType = primary key, foreign key, or attribute
 	Attribute(string _name, string _type);
 	Attribute(string _name, string _type, string _keyType);
 	

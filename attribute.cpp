@@ -8,7 +8,7 @@ Attribute::Attribute(string _name, string _type){
 	name = _name;
 	type = _type;
 
-	keyType = "attr"; //keyType set to "attr" if attribute isn't primary or foreign key
+	keyType = "attribute"; //keyType set to "attribute" if attribute isn't primary or foreign key
 }
 
 Attribute::Attribute(string _name, string _type, string _keyType)

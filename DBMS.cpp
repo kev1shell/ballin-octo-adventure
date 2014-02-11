@@ -29,13 +29,19 @@ int main(int argc, _TCHAR* argv[])
 	tableB.pushBackRow(newRow2);
 	tableB.pushBackRow(newer2);
 
-	Table tableC = tableA; //<------- Holy shit it worked
+	Table result = select(tableB, user_id, "4", '<');
+
+
+
+	//Table tableC = tableA; //<------- Holy shit it worked
 
 	//tableA.printTable(tableA);
 
 	//setUnion(tableA, tableB);
 
-	Table nj = naturalJoin(tableA, tableB, privilege_level);
+	//Table nj = naturalJoin(tableA, tableB, privilege_level);
+
+	
 
 	return 0;
 }
