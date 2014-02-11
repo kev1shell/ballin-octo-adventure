@@ -1,1 +1,0 @@
-cout << "new file" << endl;

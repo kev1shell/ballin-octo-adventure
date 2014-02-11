@@ -34,6 +34,9 @@ public:
 	void printAttVec(Table _table);
 	void printRow(vector<string> _row);
 
+	//copy constructor
+	Table& operator=(Table& table);
+
 };
 
 #endif
