@@ -108,7 +108,7 @@ namespace dbmsFunctions{
 		int atrbIndexA = 0;
 		int atrbIndexB = 0;
 
-		//add atributes of tableA and tableB to result table
+		//add attributes of tableA and tableB to result table
 		for (int i = 0; i < tableA.attributes.size(); i++){
 			
 			if (tableA.attributes[i].name != attribute.name){
@@ -349,7 +349,6 @@ namespace dbmsFunctions{
 			return _tablist;
 		}
 	}
-
 
 	Table select(Table table, Attribute attribute, string findthis, char opp)
 	{
