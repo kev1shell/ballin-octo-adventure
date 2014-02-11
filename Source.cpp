@@ -2,6 +2,9 @@
 //
 
 #include "stdafx.h"
+
+#include <stdio.h>
+#include <tchar.h>
 #include "Table.h"
 #include <iostream>
 
@@ -13,6 +16,9 @@ void setDifference(Table _tab1, Table _tab2);
 vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name);
 vector<Table> dropTable(vector<Table> _tablist, string _name);
 void renameAttr(Table &_table, Attribute _attr, string _newName);
+void updateValue(Table &_table, string rowPrimaryKey, Attribute _attr, string newValue);
+void deleteRow(Table &_table, string primaryKey);
+void insertRow(Table &_table, vector <string> addRow);
 
 int main(int argc, _TCHAR* argv[])
 {
@@ -20,17 +26,17 @@ int main(int argc, _TCHAR* argv[])
 	//Table 1 Test: ORDER TABLE
 	Attribute order_id("order_id", "int", "primary key");
 	Attribute order_paymentMethod("order_paymentMethod", "string");
-	
-	vector<Attribute> aList = {order_id, order_paymentMethod};
+
+	vector<Attribute> aList = { order_id, order_paymentMethod };
 
 	Table order_table(aList, "Order Table");
-	
+
 	vector <string> rowrow = { "0", "credit" };
 	vector <string> rowyourboat = { "1", "counterfit?" };
 
 	order_table.pushBackRow(rowrow);
 	order_table.pushBackRow(rowyourboat);
-	
+
 	order_table.printTable(order_table);
 
 	//Table 2 Test: USER Table
@@ -50,10 +56,12 @@ int main(int argc, _TCHAR* argv[])
 	user_table.pushBackRow(newer);
 	user_table.pushBackRow(newest);
 	user_table.printTable(user_table);
-	
+
 	renameAttr(user_table, privilege_level, "access_level");
 
 	user_table.printTable(user_table);
+	
+	cout << endl;
 
 	crossProduct(order_table, user_table);
 	projection(user_table, "user_id");
@@ -61,6 +69,19 @@ int main(int argc, _TCHAR* argv[])
 	setDifference(user_table, order_table);
 	setDifference(order_table, user_table);
 
+	cout << endl;
+	cout << "UPDATE VALUE" << endl;
+	updateValue(user_table, "0", user_id, "100");
+	user_table.printTable(user_table);
+	
+	cout << endl;
+	vector <string> newuserrowwww = { "0", "!xobile", "guest" };
+	insertRow(user_table, newuserrowwww);
+	user_table.printTable(user_table);
+
+	cout << endl;
+	deleteRow(user_table, "0");
+	user_table.printTable(user_table);
 	return 1;
 }
 
@@ -97,7 +118,7 @@ void crossProduct(Table _table1, Table _table2)
 					table2RowsPKnames.push_back(_table2.attrNameAt(a));
 				}
 			}
-			
+
 			std::cout << _table1.getTableName() << ": ";
 			for (int b = 0; b < table1RowPKnames.size(); b++)
 			{
@@ -108,7 +129,7 @@ void crossProduct(Table _table1, Table _table2)
 
 			for (int c = 0; c < table2RowPrimaryKEys.size(); c++)
 			{
-				std::cout << ": " << table2RowsPKnames[c] << " = " << table2RowPrimaryKEys[c] <<" ";
+				std::cout << ": " << table2RowsPKnames[c] << " = " << table2RowPrimaryKEys[c] << " ";
 			}
 			cout << endl;
 		}
@@ -139,7 +160,7 @@ void projection(Table _table, string _attrName){
 		cout << "desired attribute: " << _attrName << endl;
 		for (int z = 0; z < numRows; z++){
 			cout << rowList[z][desired] << endl;
-			}
+		}
 	}
 	else cout << "desired attribute not in table" << endl;
 
@@ -177,7 +198,7 @@ void setDifference(Table _tab1, Table _tab2){
 		temp = out[p];
 		tempSize = temp.size();
 		for (int h = 0; h < tempSize; h++){
-			cout << temp[h] << "     " ;
+			cout << temp[h] << "     ";
 		}
 		cout << endl;
 	}
@@ -217,7 +238,7 @@ vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, strin
 vector<Table> dropTable(vector<Table> _tablist, string _name){
 	int listSize = _tablist.size();
 	if (listSize == 0){
-		cout << "dropTable called on empty Table vector!" << endl; 
+		cout << "dropTable called on empty Table vector!" << endl;
 		return _tablist;
 	}
 	else{
@@ -229,12 +250,57 @@ vector<Table> dropTable(vector<Table> _tablist, string _name){
 			tableName = _tablist[x].name;
 			if (_name == tableName)
 				perp = x;
-				found = true;
+			found = true;
 		}
 		if (found == true){
-		_tablist.erase(_tablist.begin() + perp);
-		cout << "size after erase: " << _tablist.size();
+			_tablist.erase(_tablist.begin() + perp);
+			cout << "size after erase: " << _tablist.size();
 		}
 		return _tablist;
 	}
+}
+
+void updateValue(Table &_table, string rowPrimaryKey, Attribute _attr, string newValue)
+{
+	int rowloc, attrloc;
+	for (int x = 0; x < _table.getNumRows(); x++)
+	{
+		//find location in row vector of item requested using primary key
+		if (_table.getPrimaryKey(x) == rowPrimaryKey)
+		{
+			rowloc = x;
+			break;
+		}
+	}
+
+	for (int x = 0; x < _table.getNumAttrs(); x++)
+	{
+		if (_attr.getKeyType() == _table.attrKeyAt(x) && _attr.getName() == _table.attrNameAt(x) && _attr.getType() == _table.attrTypeAt(x))
+		{
+			attrloc = x;
+			break;
+		}
+	}
+
+	_table.updateVal(rowloc, attrloc, newValue);
+}
+
+void insertRow(Table &_table, vector <string> addRow)
+{
+	_table.pushBackRow(addRow);
+}
+
+void deleteRow(Table &_table, string primaryKey)
+{
+	int rowloc;
+	for (int x = 0; x < _table.getNumRows(); x++)
+	{
+		//find location in row vector of item requested using primary key
+		if (_table.getPrimaryKey(x) == primaryKey)
+		{
+			rowloc = x;
+			break;
+		}
+	}
+	_table.deleteRowAtLoc(rowloc);
 }

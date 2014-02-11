@@ -12,7 +12,7 @@ class Table{
 public:
 	vector<Attribute> attributes;
 	vector<vector<string>> rows;
-	string name; 
+	string name;
 	Table(vector<Attribute> _attributes, string NAME);
 
 	//insert a new row onto end of the table
@@ -22,12 +22,17 @@ public:
 	string getTableName();
 	int getNumRows();
 	int getNumAttrs();
+	string getPrimaryKey(int rowLoc);	//IMPORTANT!!: if table has multiple primary keys the string returns appends the two keys in the order they show up in the table (left to right)
 	string getRowAttr(int rowLoc, int attrLoc);
 	string attrNameAt(int loc);
 	string attrKeyAt(int loc);
+	string attrTypeAt(int loc);
+	vector<vector<string>> getRows();
 
 	//Modifiers
 	void setAttrNameAt(int loc, string _newname);
+	void updateVal(int rowLoc, int attrLoc, string newValue);
+	void deleteRowAtLoc(int rowloc);
 
 	//Prints
 	void printTable(Table _table);
