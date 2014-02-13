@@ -362,7 +362,7 @@ namespace dbmsFunctions{
 				attributeIndex = i;
 			}
 		}
-
+		//never take 449
 		//determin which type of select todo
 		if (opp == '='){
 			for (int i = 0; i < table.getNumRows(); i++){
@@ -374,6 +374,17 @@ namespace dbmsFunctions{
 					result.pushBackRow(currentRow);
 
 				}
+			}
+		}
+		else if (opp == '!'){
+			for (int i = 0; i < table.getNumRows(); i++){
+
+				vector<string> currentRow = table.getRows()[i];
+
+				if (currentRow[attributeIndex] != findthis){					
+					result.pushBackRow(currentRow);				
+				}
+
 			}
 		}
 		else if (opp == '>'){
