@@ -5,18 +5,19 @@
 
 using namespace std;
 
+//all of our lowest level functions that operate directly on tables are contained in this namespace
 namespace dbmsFunctions{
+	//This Boolean Value is used to control the testing process 
+	bool testing = false;
 
-	bool testing = true;
-
-
+	//This function takes in an integer value and returns a string containing the same number
 	string int2string(int number) {
 		stringstream ss;//create a stringstream
 		ss << number;//add number to the stream
 		return ss.str();//return a string with the contents of the stream
 	}
 
-	
+	//This function takes in 2 tables, and then returns a table containing the union of these 2 tables (if there attribute lists match)
 	Table setUnion(Table& tableA, Table& tableB){
 		
 		Table result(tableA.attributes, "setUnion of " + tableA.name + tableB.name);
@@ -95,7 +96,7 @@ namespace dbmsFunctions{
 		
 	}
 
-
+	//This function takes in 2 tables, and an attribute that they share, it returns a table containing the natural join of these tables
 	Table naturalJoin(Table& tableA, Table& tableB, Attribute attribute){
 
 		vector<Attribute> attributeList;
@@ -223,39 +224,53 @@ namespace dbmsFunctions{
 	}
 
 
-	// print the same attribute from every row of a table
-	void projection(Table _table, string _attrName){
-		int desired;
+	// This function takes in a table and a vector of desired attributes, it then returns a table containing every value associated 
+	//with these attributes from the original table
+	Table projection(Table _table, vector<Attribute> _attrVec){
+		Table result(_attrVec, "projection from " + _table.name);
+		vector<int> desired;
 		bool match = false;
 		vector<vector<string>> rowList;
 		vector<Attribute> atts;
 		vector<string> names;
+		vector<string> _attrVecName;
+		vector<string> currentRow;
 		atts = _table.attributes;
 		rowList = _table.rows;
 		int numRows = rowList.size();
 		int attSize = atts.size();
+		for (int nameIt = 0; nameIt < _attrVec.size(); nameIt++){
+			_attrVecName.push_back(_attrVec[nameIt].name);
+		}
 		for (int x = 0; x < attSize; x++){
 			names.push_back(atts[x].name);
 		}
-		for (int y = 0; y < attSize; y++){
-			if (_attrName == names[y]){
-				desired = y;
-				match = true;
+		for (int attIt = 0; attIt < _attrVecName.size(); attIt++){
+			for (int y = 0; y < attSize; y++){
+				if (_attrVecName[attIt] == names[y]){
+					desired.push_back(y);
+					match = true;
+				}
 			}
 		}
 		if (match = true){
-			cout << "desired attribute: " << _attrName << endl;
 			for (int z = 0; z < numRows; z++){
-				cout << rowList[z][desired] << endl;
+				for (int iter = 0; iter < desired.size(); iter++){
+					currentRow.push_back(rowList[z][desired[iter]]);
+				}
+				result.pushBackRow(currentRow);
+				currentRow.clear();
 			}
 		}
 		else cout << "desired attribute not in table" << endl;
+		return result;
 
 	}
 
 
-	// What does table 1 hold, that table 2 is missing
-	void setDifference(Table _tab1, Table _tab2){
+	// this function takes in 2 tables and returns a table holding all the values that table 1 has and table 2 doesnt
+	Table setDifference(Table _tab1, Table _tab2){
+		Table result(_tab1.attributes, "set difference of " + _tab1.name + _tab2.name);
 		bool match = true;
 		bool rowMatch = false;
 		int numAtt = _tab1.attributes.size();
@@ -264,8 +279,6 @@ namespace dbmsFunctions{
 		int numRow2 = _tab2.rows.size();
 		vector<vector<string>> RowN = _tab1.rows;
 		vector<vector<string>> RowN2 = _tab2.rows;
-		vector<vector<string>> out;
-		vector<string> temp;
 		int outSize;
 		int rowSize;
 		int tempSize;
@@ -277,22 +290,13 @@ namespace dbmsFunctions{
 				}
 			}
 			if (rowMatch == false){
-				out.push_back(RowN[r]);
+				result.pushBackRow(RowN[r]);
 			}
 		}
-		outSize = out.size();
-		cout << "Set Difference between: " << _tab1.name << " & " << _tab2.name << endl;
-		for (int p = 0; p < outSize; p++){
-			temp = out[p];
-			tempSize = temp.size();
-			for (int h = 0; h < tempSize; h++){
-				cout << temp[h] << "     ";
-			}
-			cout << endl;
-		}
+		return result;
 	}
 
-
+	// this function takes in a table, and a list of attributes, it returns a table with the attribute list changed to match the input
 	void renameAttr(Table &_table, Attribute _attr, string _newName)
 	{
 		bool found = false;
@@ -350,6 +354,8 @@ namespace dbmsFunctions{
 		}
 	}
 
+	//This function takes in a table, an attribute, a string (the value to be searched for) and a character (representing the operation to be performed *>,<,=,!=*). 
+	//It returns a table containing all rows that satisfy the input condition
 	Table select(Table table, Attribute attribute, string findthis, char opp)
 	{
 		Table result(table.attributes, "selectResult");
@@ -362,7 +368,7 @@ namespace dbmsFunctions{
 				attributeIndex = i;
 			}
 		}
-		//never take 449
+
 		//determin which type of select todo
 		if (opp == '='){
 			for (int i = 0; i < table.getNumRows(); i++){
@@ -374,17 +380,6 @@ namespace dbmsFunctions{
 					result.pushBackRow(currentRow);
 
 				}
-			}
-		}
-		else if (opp == '!'){
-			for (int i = 0; i < table.getNumRows(); i++){
-
-				vector<string> currentRow = table.getRows()[i];
-
-				if (currentRow[attributeIndex] != findthis){					
-					result.pushBackRow(currentRow);				
-				}
-
 			}
 		}
 		else if (opp == '>'){
