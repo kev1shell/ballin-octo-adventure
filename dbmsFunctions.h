@@ -354,6 +354,9 @@ namespace dbmsFunctions{
 		}
 	}
 
+	
+	Table SuperSelect(Table table, string operand1, string operation, string operand2);
+	
 	//This function takes in a table, an attribute, a string (the value to be searched for) and a character (representing the operation to be performed *>,<,=,!=*). 
 	//It returns a table containing all rows that satisfy the input condition
 	Table select(Table table, Attribute attribute, string findthis, char opp)
