@@ -28,6 +28,7 @@ public:
 	string attrKeyAt(int loc);
 	string attrTypeAt(int loc);
 	vector<vector<string>> getRows();
+	vector<Attribute> getAttributes();
 
 	//Modifiers
 	void setAttrNameAt(int loc, string _newname);

@@ -82,6 +82,11 @@ vector<vector<string>> Table::getRows()
 {
 	return rows;
 }
+
+vector<Attribute> Table::getAttributes()
+{
+	return attributes;
+}
 //**************************************************** MODIFIERS ***********************************************************
 void Table::setAttrNameAt(int loc, string _newname)
 {

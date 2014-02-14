@@ -354,75 +354,211 @@ namespace dbmsFunctions{
 		}
 	}
 
-	
-	Table SuperSelect(Table table, string operand1, string operation, string operand2);
-	
-	//This function takes in a table, an attribute, a string (the value to be searched for) and a character (representing the operation to be performed *>,<,=,!=*). 
+	 
 	//It returns a table containing all rows that satisfy the input condition
-	Table select(Table table, Attribute attribute, string findthis, char opp)
-	{
-		Table result(table.attributes, "selectResult");
-
-		//find which attribute of table is the condition attribute
-		int attributeIndex = 0;
+	Table select(Table table, string operand1, string operation, string operand2){
 		
-		for (int i = 0; i < table.attributes.size(); i++){
-			if (table.attributes[i].getName() == attribute.getName()){
-				attributeIndex = i;
+		Table result(table.getAttributes(), "SelectedFrom" + table.getTableName());
+
+		Attribute attTemp1("", "");
+		Attribute attTemp2("", "");
+		
+		Attribute* attribute1 = NULL;
+		Attribute* attribute2 = NULL;
+
+		string literal = "";
+
+		int att1Index = 0;
+		int att2Index = 0;
+
+		for (int i = 0; i < table.getAttributes().size(); i++)
+		{
+			if (attribute1 == NULL && table.getAttributes()[i].getName() == operand1)
+			{
+				attTemp1.setName(table.getAttributes()[i].getName());
+				attTemp1.setType(table.getAttributes()[i].getType());
+				attribute1 = &attTemp1;
+				att1Index = i;
+			}
+			else if (attribute2 == NULL && table.getAttributes()[i].getName() == operand2)
+			{
+				attTemp2.setName(table.getAttributes()[i].getName());
+				attTemp2.setType(table.getAttributes()[i].getType());
+				attribute2 = &attTemp1;
+				att2Index = i;
+			}
+
+			if (attribute1 != NULL && attribute2 != NULL)
+			{
+				break;
 			}
 		}
 
-		//determin which type of select todo
-		if (opp == '='){
-			for (int i = 0; i < table.getNumRows(); i++){
-				
-				vector<string> currentRow = table.getRows()[i];
+		if (attribute1 == NULL && attribute2 == NULL)
+		{
+			return result;
+		}
 
-				if (currentRow[attributeIndex] == findthis){
-					
-					result.pushBackRow(currentRow);
+		if (attribute2 == NULL)
+		{
+			literal = operand2;
+		}
+		else if (attribute1 == NULL)
+		{
+			literal = operand1;
+		}
 
+		for (int i = 0; i < table.getRows().size(); i++)
+		{
+			if (attribute1 != NULL && attribute2 != NULL)
+			{
+				if (operation == "==")
+				{
+					if (table.getRows()[i][att1Index] == table.getRows()[i][att2Index])
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
 				}
-			}
-		}
-		else if (opp == '>'){
-			
-			if (attribute.getType() == "int"){
-				
-				int target = atoi(findthis.c_str());
-
-				for (int i = 0; i < table.getNumRows(); i++){
-
-					vector<string> currentRow = table.getRows()[i];
-
-					int data = atoi(currentRow[attributeIndex].c_str());
-					
-					if (data > target){
-						result.pushBackRow(currentRow);
+				else if (operation == "!=")
+				{
+					if (table.getRows()[i][att1Index] != table.getRows()[i][att2Index])
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (attribute1->getType() == "int" && attribute2->getType() == "int")
+				{
+					if (operation == "<=")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) <= atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">=")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) >= atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == "<")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) < atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) > atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
 					}
 				}
 			}
-
-		}
-		else if (opp == '<'){
-			if (attribute.getType() == "int"){
-
-				int target = atoi(findthis.c_str());
-
-				for (int i = 0; i < table.getNumRows(); i++){
-
-					vector<string> currentRow = table.getRows()[i];
-
-					int data = atoi(currentRow[attributeIndex].c_str());
-
-					if (data < target){
-						result.pushBackRow(currentRow);
+			else if (attribute1 != NULL)
+			{
+				if (operation == "==")
+				{
+					if (table.getRows()[i][att1Index] == literal)
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (operation == "!=")
+				{
+					if (table.getRows()[i][att1Index] != literal)
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (attribute1->getType() == "int")
+				{
+					if (operation == "<=")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) <= atoi(literal.c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">=")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) >= atoi(literal.c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == "<")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) < atoi(literal.c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) > atoi(literal.c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+				}
+			}
+			else if (attribute2 != NULL)
+			{
+				if (operation == "==")
+				{
+					if (literal == table.getRows()[i][att2Index])
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (operation == "!=")
+				{
+					if (literal != table.getRows()[i][att2Index])
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (attribute2->getType() == "int")
+				{
+					if (operation == "<=")
+					{
+						if (atoi(literal.c_str()) <= atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">=")
+					{
+						if (atoi(literal.c_str()) >= atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == "<")
+					{
+						if (atoi(literal.c_str()) < atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">")
+					{
+						if (atoi(literal.c_str()) > atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
 					}
 				}
 			}
 		}
+
 		return result;
 	}
+	
 
 	//udates a value in a single cell in a table
 	void updateValue(Table &_table, string rowPrimaryKey, Attribute _attr, string newValue)
