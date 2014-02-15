@@ -16,14 +16,14 @@ namespace dbmsFunctions{
 		return ss.str();//return a string with the contents of the stream
 	}
 
-	
+
 	Table setUnion(Table& tableA, Table& tableB){
-		
+
 		Table result(tableA.attributes, "setUnion of " + tableA.name + tableB.name);
 
 		Table* longTable;
 		Table* shortTable;
-		
+
 		//ensure both tables have equal number of attributes
 		if (tableA.attributes.size() != tableB.attributes.size()){
 			cout << "Set Union Failed: attribute mismatch" << endl;
@@ -46,18 +46,18 @@ namespace dbmsFunctions{
 		}
 
 		for (int i = 0; i < longTable->rows.size(); i++){
-			
+
 			result.pushBackRow(longTable->rows[i]);
-		
+
 		}
-		
-		
+
+
 		for (int i = 0; i < shortTable->rows.size(); i++){
-			
+
 			vector<string> currentRow = shortTable->rows[i];
 
 			if (result.rows.size() == 0){
-				
+
 				result.rows.push_back(currentRow);
 				continue;
 			}
@@ -68,13 +68,13 @@ namespace dbmsFunctions{
 				int numAttributes = currentRow.size();
 
 				for (int col = 0; col < currentRow.size(); col++){
-					
+
 					if (currentRow[col] == result.rows[row][col]){
-						
+
 						similarAttributes++;
-						
+
 						if (similarAttributes == numAttributes){
-							
+
 							col = currentRow.size();
 							row = result.rows.size();
 							continue;
@@ -88,11 +88,11 @@ namespace dbmsFunctions{
 					continue;
 				}
 			}
-			
+
 		}
 
 		return result;
-		
+
 	}
 
 
@@ -102,7 +102,7 @@ namespace dbmsFunctions{
 
 		Attribute NJkey("NJID", "int", "primary key");	//this will be the key of the resulting table
 
-		attributeList.push_back(NJkey);	
+		attributeList.push_back(NJkey);
 		attributeList.push_back(attribute);
 
 		int atrbIndexA = 0;
@@ -110,7 +110,7 @@ namespace dbmsFunctions{
 
 		//add attributes of tableA and tableB to result table
 		for (int i = 0; i < tableA.attributes.size(); i++){
-			
+
 			if (tableA.attributes[i].name != attribute.name){
 				attributeList.push_back(tableA.attributes[i]);
 			}
@@ -166,7 +166,7 @@ namespace dbmsFunctions{
 			}
 
 		}
-		
+
 		return result;
 	}
 
@@ -316,7 +316,7 @@ namespace dbmsFunctions{
 
 
 	//create table function in the list of operating functions 
-	vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name){
+	vector<Table> createTable(vector<Table> &_tablist, vector<Attribute> _attr, string _name){
 		Table newTab(_attr, _name);
 		_tablist.push_back(newTab);
 		return _tablist;
@@ -356,7 +356,7 @@ namespace dbmsFunctions{
 
 		//find which attribute of table is the condition attribute
 		int attributeIndex = 0;
-		
+
 		for (int i = 0; i < table.attributes.size(); i++){
 			if (table.attributes[i].getName() == attribute.getName()){
 				attributeIndex = i;
@@ -366,11 +366,11 @@ namespace dbmsFunctions{
 		//determin which type of select todo
 		if (opp == '='){
 			for (int i = 0; i < table.getNumRows(); i++){
-				
+
 				vector<string> currentRow = table.getRows()[i];
 
 				if (currentRow[attributeIndex] == findthis){
-					
+
 					result.pushBackRow(currentRow);
 
 				}
@@ -381,16 +381,16 @@ namespace dbmsFunctions{
 
 				vector<string> currentRow = table.getRows()[i];
 
-				if (currentRow[attributeIndex] != findthis){					
-					result.pushBackRow(currentRow);				
+				if (currentRow[attributeIndex] != findthis){
+					result.pushBackRow(currentRow);
 				}
 
 			}
 		}
 		else if (opp == '>'){
-			
+
 			if (attribute.getType() == "int"){
-				
+
 				int target = atoi(findthis.c_str());
 
 				for (int i = 0; i < table.getNumRows(); i++){
@@ -398,7 +398,7 @@ namespace dbmsFunctions{
 					vector<string> currentRow = table.getRows()[i];
 
 					int data = atoi(currentRow[attributeIndex].c_str());
-					
+
 					if (data > target){
 						result.pushBackRow(currentRow);
 					}
