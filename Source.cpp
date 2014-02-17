@@ -1,12 +1,13 @@
 #include "stdafx.h"
 #include "dbmsFunctions.h"
-
-using namespace dbmsFunctions;
 #include <stdio.h>
 #include <ctype.h>
 #include <string>
 #include <vector>
 #include <iostream>
+
+using namespace dbmsFunctions;
+
 
 
 //notes for parser_CREATETABLE.
@@ -20,87 +21,148 @@ using namespace dbmsFunctions;
 #define testing (false)		//used for testing tokenizer function
 #define testingMain (true)	//used for testing main function
 #define testingParserCreateTable (false)
+#define testingParserInsertInto (false)
+#define testingParserDelete (true)
 
 using namespace std;
 
-
-//TABLES STORED IN VECTOR
-vector <Table> allTables;
 
 struct Token {
 	string content;
 
 	int type;   // type can be: identifier, number, op (!, <, >, etc.), punc, quotes
 
+	Token()
+	{
+
+	};
 	Token(string _content, int _type)
 	{
 		content = _content;
 		type = _type;
 	}
 
-
+	/*Token& operator=(Token token)
+	{
+		content = token.content;
+		type = token.type;
+		return token;
+	}*/
 };
 
-//*********************************************************************TEST INPUTS********************************************************
-string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
-//string testString = "dogs <- select (kind == \"dog\") animals;";
 
 
 //*********************************************************************FUNCTION HEADERS***************************************************
 vector<Token> tokenizer(int startLoc, string s);
+//Commands
 void parser_CreateTable(vector <Token> cmd);
+void parser_insertInto(vector <Token> cmd);
+void parser_Delete(vector <Token> cmd);
+//Queries
+void parser_select(vector <Token> cmd);
 
+//*******************************************************************Global Variables*****************************************************
+vector <Table> allTables; //Tables stored in vector
+
+//*********************************************************************MAIN****************************************************************
 int main()
 {
-	//if the input is a query (idk how to spell tht) it includes a "<-" in it.
-	size_t functionType = testString.find("<-");
-	if (functionType != string::npos)
+	//*********************************************************************TEST INPUTS********************************************************
+	string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
+	string testString2 = "dogs <- select (kind == \"dog\") animals;";
+	string testString3 = "INSERT INTO animals VALUES FROM(\"Joe\", \"cat\", 4);";
+	string testString4 = "INSERT INTO animals VALUES FROM(\"Spot\", \"dog\", 10);";
+	string testString5 = "INSERT INTO animals VALUES FROM(\"Snoopy\", \"dog\", 3);";
+	string testString6 = "INSERT INTO animals VALUES FROM(\"Tweety\", \"bird\", 1);";
+	string testString7 = "INSERT INTO animals VALUES FROM(\"Joe\", \"bird\", 2);";
+	string testString8 = "DELETE FROM animals WHERE (kind !=\"dog\" && name ==\"Joe\");";
+	vector <string> testStrings = { testString, testString2, testString3, testString4, testString5, testString6, testString7, testString8 };
+
+	for (int iter = 0; iter < testStrings.size(); iter++)
 	{
-		//if "<-" is found go thru query calls (e.g. select, project, etc.)
-		if (testString.substr(functionType + 3, 6) == "select")
+		//if the input is a query (idk how to spell tht) it includes a "<-" in it.
+		size_t functionType = testStrings[iter].find("<-");
+		if (functionType != string::npos)
 		{
-			vector <Token> select;
-			select = tokenizer(0, testString);
-			if (testingMain)
+			//if "<-" is found go thru query calls (e.g. select, project, etc.)
+			if (testStrings[iter].substr(functionType + 3, 6) == "select")
 			{
-				for (int x = 0; x < select.size(); x++)
+				vector <Token> select;
+				select = tokenizer(functionType+9, testStrings[iter]);
+				if (testingMain)
 				{
-					cout << select[x].content;
+					cout << testStrings[iter].substr(functionType + 3, 6) << endl;
+					for (int x = 0; x < select.size(); x++)
+					{
+						cout << select[x].content << " " << select[x].type << endl << endl;
+					}
+					cout << endl;
 				}
-				cout << endl;
+				parser_select(select);
+			}
+		}
+		else
+		{
+			//else go thru commands (e.g. "CREATE TABLE", "SHOW", etc.)
+			if (testStrings[iter].substr(0, 12) == "CREATE TABLE")
+			{
+				cout << testStrings[iter].substr(0, 12) << endl;
+
+				vector <Token> createTable = tokenizer(13, testStrings[iter]);
+
+				if (testingMain)
+				{
+					for (int x = 0; x < createTable.size(); x++)
+					{
+						cout << createTable[x].content << " " << createTable[x].type << endl << endl;
+					}
+					cout << endl;
+				}
+
+				parser_CreateTable(createTable);
+
+			}
+
+			else if (testStrings[iter].substr(0, 11) == "INSERT INTO")
+			{
+				cout << testStrings[iter].substr(0, 11) << endl;
+
+				vector <Token> insertINTO = tokenizer(12, testStrings[iter]);
+
+				if (testingMain)
+				{
+					for (int x = 0; x < insertINTO.size(); x++)
+					{
+						cout << insertINTO[x].content << " " << insertINTO[x].type << endl << endl;
+					}
+					cout << endl;
+				}
+
+				parser_insertInto(insertINTO);
+			}
+
+			else if (testStrings[iter].substr(0, 11) == "DELETE FROM")
+			{
+				cout << testStrings[iter].substr(0, 11) << endl;
+
+				vector <Token> DeleteThis = tokenizer(12, testStrings[iter]);
+
+				if (testingMain)
+				{
+					for (int x = 0; x < DeleteThis.size(); x++)
+					{
+						cout << DeleteThis[x].content << " " << DeleteThis[x].type << endl << endl;
+					}
+					cout << endl;
+				}
+
+				parser_Delete(DeleteThis);
 			}
 		}
 	}
-	else
-	{
-		//else go thru commands (e.g. "CREATE TABLE", "SHOW", etc.)
-		if (testString.substr(0, 12) == "CREATE TABLE")
-		{
-			if (testingMain)
-			{
-				cout << testString.substr(0, 12) << endl;
-			}
-
-			vector <Token> createTable = tokenizer(13, testString);
-
-			if (testingMain)
-			{
-				for (int x = 0; x < createTable.size(); x++)
-				{
-					cout << createTable[x].content << " " << createTable[x].type << endl << endl;
-				}
-				cout << endl;
-			}
-			//after parser called the following is sotred in a vector "animals(nameVARCHAR(20),kindVARCHAR(8),yearsINTEGER)PRIMARYKEY(name,kind);"
-			//call parserCreateTable("animals (name VARCHAR(10));") in parserFunctions namespace
-
-			parser_CreateTable(createTable);
-
-		}
-		// else if()
-	}
-	return 0;
+	system("pause");
 }
+//**************************************************************************************************************************************************
 
 //Turns string input s into tokens starting from a specified position in the string (startLoc); Returns a vector of the tokens
 vector<Token> tokenizer(int startLoc, string s)
@@ -313,13 +375,14 @@ vector<Token> tokenizer(int startLoc, string s)
 	}
 }
 
+//Takes in input command in vector form. Creates new table and stores it in all tables. 
 void parser_CreateTable(vector<Token> cmd)
 {
 	string _name;							//stores name that will be passed to the dbms create table
 	vector <Attribute> attrs;				//stores attributes that will be passed to dbms the create 
 	int positionInInput;
 	vector <Token> attributes;				//stores attributes (in test string input: (name VARCHAR(20), kind VARCHAR(8), years INTEGER))
-	if (cmd[0].type == 1)
+	if (cmd[0].type == identifier)
 	{
 		 _name = cmd[0].content;
 	}
@@ -496,4 +559,545 @@ void parser_CreateTable(vector<Token> cmd)
 	createTable(allTables, attrs, _name);
 	cout << "The following table has been created:" << endl;
 	allTables[allTables.size() - 1].printTable(allTables[allTables.size() - 1]);
+}
+
+//Takes in input command in vector form. Performs select operation and returns a table.
+void parser_select(vector <Token> cmd)
+{
+	return;
+}
+
+//Takes in input command from vector. Inserts requests in command into table listed in command
+void parser_insertInto(vector <Token> cmd)
+{
+	int positionInInput;
+	int tableLoc;	//stores location of table in vector<Table> allTables
+	vector <string> addThisRow; //contains row that will be inserted into table.
+
+	//find table in vector <Token> cmd
+	if (cmd[0].type == identifier)
+	{
+		bool foundTable = false;
+		for (int x = 0; x < allTables.size(); x++)
+		{
+			if (cmd[0].content == allTables[x].getTableName())
+			{
+				tableLoc = x;
+				foundTable = true;
+				break;
+			}
+		}
+		if (!foundTable)
+		{
+			cout << "ERROR: INSERT INTO table not found in vector of all tables" << endl;
+			return;
+		}
+	}
+	else
+	{
+		cout << "ERROR: INSERT INTO expected table name after INSERT INTO call" << endl;
+		return;
+	}
+
+	//extract row from vector <Token> cmd and store into vector <string> addThisRow
+	if (cmd[1].type == identifier && cmd[1].content == "VALUES" && cmd[2].type == identifier && cmd[2].content == "FROM")
+	{
+		if (cmd[3].type == punc && cmd[3].content == "(")
+		{
+			int openParenthesisCount = 0;
+			int closedParenthesisCount = 0;
+			positionInInput = 3;
+			while (positionInInput < cmd.size())
+			{
+				if (cmd[positionInInput].content == ")")
+				{
+					closedParenthesisCount++;
+				}
+				else if (cmd[positionInInput].content == "(")
+				{
+					openParenthesisCount++;
+				}
+				positionInInput++;
+			}
+
+			if (openParenthesisCount == closedParenthesisCount)
+			{
+				if (cmd[4].content == "\"")
+				{
+					positionInInput = 5;
+					while (positionInInput < cmd.size())
+					{
+						if (cmd[positionInInput].type == identifier)
+						{
+							addThisRow.push_back(cmd[positionInInput].content);
+							positionInInput++;
+						}
+						else if (cmd[positionInInput].type == number)
+						{
+							addThisRow.push_back(cmd[positionInInput].content);
+							positionInInput++;
+						}
+						else
+						{
+							positionInInput++;
+						}
+					}
+					if (addThisRow.size() != allTables[tableLoc].getNumAttrs())
+					{
+						cout << "ERROR: Insert Into attributes in row does not match num attributes required to be in row" << endl;
+						return;
+					}
+					
+				}
+			}
+			else
+			{
+				cout << "ERROR: INSERT INTO open and closed parenthesis counts don't match up" << endl;
+				return;
+			}
+
+		}
+		else
+		{
+			cout << "ERROR INSERT INTO: expected \"(\" after VALUES FROM" << endl;
+			return;
+		}
+	}
+	else
+	{
+		cout << "ERROR: INSERT INTO expected \"VALUES FROM\" after table name" << endl;
+		return;
+	}
+	//call void insertRow(Table &_table, vector <string> addRow)
+	if (testingParserInsertInto)
+	{
+		cout << "ADD THIS ROW = ";
+		for (int x = 0; x < addThisRow.size(); x++)
+		{
+			cout << addThisRow[x] << " ";
+		}
+		cout << endl;
+	}
+	insertRow(allTables[tableLoc], addThisRow);
+	cout << "Row has been inserted. The table now looks like this: " << endl;
+	allTables[tableLoc].printTable(allTables[tableLoc]);
+}
+
+void parser_Delete(vector <Token> cmd)
+{
+	int positionInInput;
+	int tableLoc;	//stores location of table in vector<Table> allTables
+	int attrLoc;
+	vector <string> deleteRows; //rows marked for deletion will be stored here
+
+	bool andcase = false; //condition involves &&
+	bool orcase = false; //condition involves ||
+
+	//find table in vector <Token> cmd
+	if (cmd[0].type == identifier)
+	{
+		bool foundTable = false;
+		for (int x = 0; x < allTables.size(); x++)
+		{
+			if (cmd[0].content == allTables[x].getTableName())
+			{
+				tableLoc = x;
+				foundTable = true;
+				break;
+			}
+		}
+		if (!foundTable)
+		{
+			cout << "ERROR: DELETE table not found in vector of all tables" << endl;
+			return;
+		}
+	}
+	else
+	{
+		cout << "ERROR: DELETE expected table name after DELETE FROM call" << endl;
+		return;
+	}
+
+	if (cmd[1].content == "WHERE")
+	{
+		if (cmd[2].content == "(")
+		{
+			int openparenthesiscount = 0;
+			int closedparenthesiscount = 0;
+			positionInInput = 2;
+			while (positionInInput < cmd.size())
+			{
+				if (cmd[positionInInput].content == "(")
+				{	
+					openparenthesiscount++;
+					positionInInput++;
+				}
+				else if (cmd[positionInInput].content == ")")
+				{
+					closedparenthesiscount++;
+					positionInInput++;
+				}
+				else
+					positionInInput++;
+			}
+			if (openparenthesiscount == closedparenthesiscount)
+			{
+				openparenthesiscount = 0;
+				closedparenthesiscount = 0;
+				bool firsttime = true;
+				positionInInput = 2; 
+				Token compareAgainst;				//value to compare attribute agains
+				while (openparenthesiscount != closedparenthesiscount || firsttime)
+				{
+					firsttime = false;
+					if (cmd[positionInInput].content == "(")
+					{
+						openparenthesiscount++;
+						positionInInput++;
+					}
+					else if (cmd[positionInInput].content == ")")
+					{
+						closedparenthesiscount++;
+						positionInInput++;
+					}
+					else if (cmd[positionInInput].type == identifier)
+					{
+						bool found = false;
+						//look up identifier in list of attributes to see if it exists and store location of identifier
+						for (int x = 0; x < allTables[tableLoc].getNumAttrs(); x++)
+						{
+							if (testingParserDelete)
+							{
+								cout << allTables[tableLoc].getNumAttrs() << endl;
+							}
+							if (cmd[positionInInput].content == allTables[tableLoc].attrNameAt(x))
+							{
+								if (testingParserDelete)
+								{
+									cout << "ATTR FOUND" <<endl;
+								}
+								found = true;
+								attrLoc = x;
+								break;
+							}
+						}
+						if (!found)
+						{
+							cout << "ERROR: DELETE attribute not found" << endl;
+							return;
+						}
+						positionInInput++;
+					}
+					else if (cmd[positionInInput].content == "<")
+					{
+						if (cmd[positionInInput + 1].content == "=")
+						{
+							positionInInput = positionInInput + 2;
+							if (cmd[positionInInput].type == number)
+							{
+								compareAgainst = cmd[positionInInput];
+								//store what is to be deleted
+								for (int x = 0; x < allTables[tableLoc].getNumRows(); x++)
+								{
+									if (atoi(allTables[tableLoc].getRowAttr(x, attrLoc).c_str()) <= atoi(compareAgainst.content.c_str()))
+									{
+											cout << "PRIMARY KEY TO BE DELETED: " << allTables[tableLoc].getPrimaryKey(x);
+											deleteRows.push_back(allTables[tableLoc].getPrimaryKey(x));
+									}
+								}
+							}
+							else
+							{
+								cout << "ERROR: DELETE condition. Cannot use \"<\" or \">\" with strings/varchars" << endl;
+							}
+							positionInInput++;
+						}
+						else
+						{
+							positionInInput++;
+							if (cmd[positionInInput].type == number)
+							{
+								compareAgainst = cmd[positionInInput];
+								//store what is to be deleted
+								for (int x = 0; x < allTables[tableLoc].getNumRows(); x++)
+								{
+									if (atoi(allTables[tableLoc].getRowAttr(x, attrLoc).c_str()) < atoi(compareAgainst.content.c_str()))
+									{
+											deleteRows.push_back(allTables[tableLoc].getPrimaryKey(x));
+									}
+								}
+							}
+							else
+							{
+								cout << "ERROR: DELETE condition. Cannot use \"<\" or \">\" with strings/varchars" << endl;
+							}
+							positionInInput++;
+						}
+					}
+					else if (cmd[positionInInput].content == ">")
+					{
+						if (cmd[positionInInput + 1].content == "=")
+						{
+							positionInInput = positionInInput + 2;
+							if (cmd[positionInInput].type == number)
+							{
+								compareAgainst = cmd[positionInInput];
+								//store what is to be deleted
+								for (int x = 0; x < allTables[tableLoc].getNumRows(); x++)
+								{
+									if (atoi(allTables[tableLoc].getRowAttr(x, attrLoc).c_str()) >= atoi(compareAgainst.content.c_str()))
+									{
+											deleteRows.push_back(allTables[tableLoc].getPrimaryKey(x));
+									}
+								}
+							}
+							else
+							{
+								cout << "ERROR: DELETE condition. Cannot use \"<\" or \">\" with strings/varchars" << endl;
+							}
+							positionInInput++;
+						}
+						else
+						{
+							positionInInput++;
+							if (cmd[positionInInput].type == number)
+							{
+								compareAgainst = cmd[positionInInput];
+								//store what is to be deleted
+								for (int x = 0; x < allTables[tableLoc].getNumRows(); x++)
+								{
+									if (atoi(allTables[tableLoc].getRowAttr(x, attrLoc).c_str()) > atoi(compareAgainst.content.c_str()))
+									{
+											deleteRows.push_back(allTables[tableLoc].getPrimaryKey(x));
+									}
+								}
+							}
+							else
+							{
+								cout << "ERROR: DELETE condition. Cannot use \"<\" or \">\" with strings/varchars" << endl;
+							}
+							positionInInput++;
+						}
+					}
+					else if (cmd[positionInInput].content == "=")
+					{
+						if (cmd[positionInInput + 1].content == "=")
+						{
+							positionInInput = positionInInput + 2;
+							if (cmd[positionInInput].type == number)
+							{
+								compareAgainst = cmd[positionInInput];
+								positionInInput++;
+							}
+							else if (cmd[positionInInput].content == "\"")
+							{
+								compareAgainst = cmd[positionInInput + 1];
+								if (cmd[positionInInput + 2].content == "\"")
+									positionInInput = positionInInput + 3;
+								else
+								{
+									cout << "ERROR: DELETE expected closing \"" << endl;
+									return;
+								}
+							}
+
+							//store rows to be deleted
+							if (compareAgainst.type == identifier)
+							{
+								for (int x = 0; x < allTables[tableLoc].getNumRows(); x++)
+								{
+									if (allTables[tableLoc].getRowAttr(x, attrLoc) == compareAgainst.content)
+									{
+										deleteRows.push_back(allTables[tableLoc].getPrimaryKey(x));
+									}
+								}
+							}
+							else
+							{
+								for (int x = 0; x < allTables[tableLoc].getNumRows(); x++)
+								{
+									if (atoi(allTables[tableLoc].getRowAttr(x, attrLoc).c_str()) == atoi(compareAgainst.content.c_str()))
+									{
+										deleteRows.push_back(allTables[tableLoc].getPrimaryKey(x));
+									}
+								}
+							}
+						}
+						else
+						{
+							cout << "ERROR: DELETE expected \"=\" after \"=\"";
+							return;
+						}
+
+					}
+					else if (cmd[positionInInput].content == "!")
+					{
+						if (cmd[positionInInput + 1].content == "=")
+						{
+							positionInInput = positionInInput + 2;
+							if (cmd[positionInInput].type == number)
+							{
+								compareAgainst = cmd[positionInInput];
+								positionInInput++;
+							}
+							else if (cmd[positionInInput].content == "\"")
+							{
+								compareAgainst = cmd[positionInInput + 1];
+								if (cmd[positionInInput + 2].content == "\"")
+									positionInInput = positionInInput + 3;
+								else
+								{
+									cout << "ERROR: DELETE expected closing \"" << endl;
+									return;
+								}
+							}
+
+							//store rows to be deleted
+							if (compareAgainst.type == identifier)
+							{
+								for (int x = 0; x < allTables[tableLoc].getNumRows(); x++)
+								{
+									if (allTables[tableLoc].getRowAttr(x, attrLoc) != compareAgainst.content)
+									{
+										deleteRows.push_back(allTables[tableLoc].getPrimaryKey(x));
+									}
+								}
+							}
+							else
+							{
+								for (int x = 0; x < allTables[tableLoc].getNumRows(); x++)
+								{
+									if (atoi(allTables[tableLoc].getRowAttr(x, attrLoc).c_str()) != atoi(compareAgainst.content.c_str()))
+									{
+										deleteRows.push_back(allTables[tableLoc].getPrimaryKey(x));
+									}
+								}
+							}
+						}
+						else
+						{
+							cout << "ERROR: DELETE expected \"=\" after \"!\"" << endl;
+							return;
+						}
+					}
+					else if (cmd[positionInInput].content == "|")
+					{
+						if (cmd[positionInInput + 1].content == "|")
+						{
+							positionInInput = positionInInput + 2;
+							orcase = true;
+						}
+						else
+						{
+							cout << "ERROR: DELETE expected \"|\" after \"|\"" << endl;
+							return;
+						}
+					}
+					else if (cmd[positionInInput].content == "&")
+					{
+						if (cmd[positionInInput + 1].content == "&")
+						{
+							positionInInput = positionInInput + 2;
+							andcase = true;
+						}
+						else
+						{
+							cout << "ERROR: DELETE expected \"&\" after \"&\"" << endl;
+							return;
+						}
+					}
+					else
+						positionInInput++;
+				}
+			}
+			else
+			{
+				cout << "ERROR: DELETE open parenthesis count and closed parenthesis count dont match" << endl;
+				return;
+			}
+		}
+		else
+		{
+			cout << "ERROR: DELETE expected \"(\" after WHERE" << endl;
+			return;
+		}
+	}
+	else
+	{
+		cout << "ERROR: DELETE expected WHERE after table name" << endl;
+		return;
+	}
+
+	//for && case remove the ones from the deleteRows vector that dont show up multiple times and only keep one copy of the ones that do show up multiple times
+	if (andcase)
+	{
+		vector <string> deleteTheseRows;
+		for (int x = 0; x < deleteRows.size(); x++)
+		{
+			bool repeat = false;
+			for (int y = 0; y < deleteRows.size(); y++)
+			{
+				if (y>=deleteRows.size() || x>=deleteRows.size())
+				{
+					break;
+				}
+				if (y != x && deleteRows[y] == deleteRows[x])
+				{
+					repeat = true;
+					deleteRows.erase(deleteRows.begin() + y);
+				}
+			}
+			if (repeat == true)
+			{
+				if (x >= deleteRows.size())
+					break;
+				cout << "PRIMARY KEY TO BE DELETED: " << deleteRows[x] << endl;
+				deleteTheseRows.push_back(deleteRows[x]);
+			}
+		}
+
+		for (int x = 0; x < deleteTheseRows.size(); x++)
+		{
+			deleteRow(allTables[tableLoc], deleteTheseRows[x]);
+		}
+	}
+	else if (orcase)
+	{
+		vector <string> deleteTheseRows;
+		for (int x = 0; x < deleteRows.size(); x++)
+		{
+			if (x == 0)
+			{
+				deleteTheseRows.push_back(deleteRows[x]);
+			}
+			else
+			{
+				bool repeat = false;
+				for (int y = 0; y < deleteTheseRows.size(); y++)
+				{
+					if (deleteTheseRows[y] == deleteRows[x])
+					{
+						repeat = true;
+					}
+				}
+				if (!repeat)
+				{
+					deleteTheseRows.push_back(deleteRows[x]);
+				}
+			}
+		}
+		for (int x = 0; x < deleteTheseRows.size(); x++)
+		{
+			deleteRow(allTables[tableLoc], deleteTheseRows[x]);
+		}
+	}
+	else
+	{
+		for (int x = 0; x < deleteRows.size(); x++)
+		{
+			deleteRow(allTables[tableLoc], deleteRows[x]);
+		}
+	}
+	cout << "Row that met the conditions have been deleted. The table now looks like this: " << endl;
+	allTables[tableLoc].printTable(allTables[tableLoc]);
 }

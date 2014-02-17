@@ -78,6 +78,11 @@ string Table::attrTypeAt(int loc)
 	return attributes[loc].getType();
 }
 
+vector<string> Table::getRow(int loc)
+{
+	return rows[loc];
+}
+
 vector<vector<string>> Table::getRows()
 {
 	return rows;
@@ -98,6 +103,10 @@ void Table::deleteRowAtLoc(int rowloc)
 	rows.erase(rows.begin() + rowloc);
 }
 
+void Table::setName(string _name)
+{
+	name;
+}
 //**************************************************** PRINT FUNCTIONS *****************************************************
 void Table::printTable(Table _table){
 

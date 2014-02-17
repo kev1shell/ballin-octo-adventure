@@ -170,59 +170,6 @@ namespace dbmsFunctions{
 		return result;
 	}
 
-
-	//print out every possible combination of rows in table 1 with rows in table 2.
-	void crossProduct(Table _table1, Table _table2)
-	{
-		std::cout << "Cross Product Function will print all possible combinations of rows in first column"
-			<< " with rows in second column." << endl << endl;
-		for (int x = 0; x < _table1.getNumRows(); x++)
-		{
-			vector <string> table1RowPrimaryKeys; //stores primary key values for row 
-			vector <string> table1RowPKnames; //stores primary key names for table 1
-
-			for (int z = 0; z < _table1.getNumAttrs(); z++)
-			{
-				if (_table1.attrKeyAt(z) == "primary key")
-				{
-					table1RowPrimaryKeys.push_back(_table1.getRowAttr(x, z));
-					table1RowPKnames.push_back(_table1.attrNameAt(z));
-				}
-			}
-
-			for (int y = 0; y < _table2.getNumRows(); y++)
-			{
-				//print Table 1 name and primary keys || table 2 name and primary keys of the specific row we are in right now
-
-				vector <string> table2RowPrimaryKEys; //stores primary key values for row
-				vector <string> table2RowsPKnames; //stores primary key names for table 2
-				for (int a = 0; a < _table2.getNumAttrs(); a++)
-				{
-					if (_table2.attrKeyAt(a) == "primary key");
-					{
-						table2RowPrimaryKEys.push_back(_table2.getRowAttr(y, a));
-						table2RowsPKnames.push_back(_table2.attrNameAt(a));
-					}
-				}
-
-				std::cout << _table1.getTableName() << ": ";
-				for (int b = 0; b < table1RowPKnames.size(); b++)
-				{
-					std::cout << table1RowPKnames[b] << " = " << table1RowPrimaryKeys[b];
-				}
-
-				std::cout << endl << "	" << _table2.getTableName();
-
-				for (int c = 0; c < table2RowPrimaryKEys.size(); c++)
-				{
-					std::cout << ": " << table2RowsPKnames[c] << " = " << table2RowPrimaryKEys[c] << " ";
-				}
-				cout << endl;
-			}
-		}
-	}
-
-
 	// print the same attribute from every row of a table
 	void projection(Table _table, string _attrName){
 		int desired;
@@ -293,7 +240,7 @@ namespace dbmsFunctions{
 	}
 
 
-	void renameAttr(Table &_table, Attribute _attr, string _newName)
+	Table renameAttr(Table _table, Attribute _attr, string _newName)
 	{
 		bool found = false;
 		for (int x = 0; x < _table.getNumAttrs(); x++)
@@ -307,6 +254,7 @@ namespace dbmsFunctions{
 		if (!found)
 		{
 			std::cout << "Attribute was not found in renameAttr() function." << endl;
+			return _table;
 		}
 		else if (testing)
 		{
@@ -474,4 +422,46 @@ namespace dbmsFunctions{
 		_table.deleteRowAtLoc(rowloc);
 	}
 
+	//return table of every possible combination of rows in table 1 with rows in table 2.
+	Table crossProduct(Table _table1, Table _table2)
+	{
+		std::cout << "Cross Product Function will print all possible combinations of rows in first column"
+			<< " with rows in second column." << endl << endl;
+		vector <Attribute> resultAttrs; //stores attributes of resultant table.
+		for (int x = 0; x < _table1.getNumAttrs(); x++)
+		{
+			Attribute addthis(_table1.attrNameAt(x), _table1.attrTypeAt(x), _table1.attrKeyAt(x));
+			resultAttrs.push_back(addthis);
+		}
+		for (int x = 0; x < _table2.getNumAttrs(); x++)
+		{
+			Attribute addthis(_table2.attrNameAt(x), _table2.attrTypeAt(x), _table2.attrKeyAt(x));
+			resultAttrs.push_back(addthis);
+		}
+
+		Table returnTable(resultAttrs, "returnTable"); //table to be returned after populated
+
+		//populate returnTable
+		for (int x = 0; x < _table1.getNumRows(); x++) //go thru each row in table 1.
+		{
+			for (int z = 0; z < _table2.getNumRows(); z++)
+			{
+				vector <string> addThisRow;	//row to be added to return table.
+				vector <string> table1row = _table1.getRow(x);
+				for (int y = 0; y < table1row.size(); y++)
+				{
+					addThisRow.push_back(table1row[y]);
+				}
+
+				vector <string> table2row = _table2.getRow(z);
+				for (int a = 0; a < table2row.size(); a++)
+				{
+					addThisRow.push_back(table2row[a]);
+				}
+				insertRow(returnTable, addThisRow);
+			}
+		}
+		
+		return returnTable;
+	}
 };
