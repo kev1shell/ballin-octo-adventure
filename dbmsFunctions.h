@@ -598,4 +598,44 @@ namespace dbmsFunctions{
 		
 		return returnTable;
 	}
+
+	//return table which contains the rows in both TableA and TableB
+	Table intersection(Table _table1, Table _table2){
+
+		vector<Attribute> attributeList;
+		
+		if (_table1.getAttributes().size() != _table2.getAttributes().size())
+		{
+			//ERROR mismatched attributes
+			cout << "ERROR mismatched attributes" << endl;
+			Attribute ERROR("ERROR", "string");
+			vector<Attribute> attributeList = { ERROR };
+			Table result(attributeList, "ERROR");
+			return result;
+		}
+		
+		attributeList = _table1.getAttributes();
+
+		Table result(attributeList, "result");
+
+		for (int i = 0; i < _table1.getRows().size(); i++)
+		{
+			for (int j = 0; j < _table2.getRows().size(); j++)
+			{
+				int numEqualAttributes = 0;
+				for (int k = 0; k < _table1.getAttributes().size(); k++)
+				{
+					if (_table1.getRows()[i][k] == _table2.getRows()[j][k])
+					{
+						numEqualAttributes++;
+					}
+					if (numEqualAttributes == _table1.getAttributes().size())
+					{
+						result.pushBackRow(_table1.getRows()[i]);
+					}
+				}
+			}
+		}
+		return result;
+	}
 };
