@@ -19,12 +19,12 @@ namespace dbmsFunctions{
 
 	//This function takes in 2 tables, and then returns a table containing the union of these 2 tables (if there attribute lists match)
 	Table setUnion(Table& tableA, Table& tableB){
-		
+
 		Table result(tableA.attributes, "setUnion of " + tableA.name + tableB.name);
 
 		Table* longTable;
 		Table* shortTable;
-		
+
 		//ensure both tables have equal number of attributes
 		if (tableA.attributes.size() != tableB.attributes.size()){
 			cout << "Set Union Failed: attribute mismatch" << endl;
@@ -47,18 +47,18 @@ namespace dbmsFunctions{
 		}
 
 		for (int i = 0; i < longTable->rows.size(); i++){
-			
+
 			result.pushBackRow(longTable->rows[i]);
-		
+
 		}
-		
-		
+
+
 		for (int i = 0; i < shortTable->rows.size(); i++){
-			
+
 			vector<string> currentRow = shortTable->rows[i];
 
 			if (result.rows.size() == 0){
-				
+
 				result.rows.push_back(currentRow);
 				continue;
 			}
@@ -69,13 +69,13 @@ namespace dbmsFunctions{
 				int numAttributes = currentRow.size();
 
 				for (int col = 0; col < currentRow.size(); col++){
-					
+
 					if (currentRow[col] == result.rows[row][col]){
-						
+
 						similarAttributes++;
-						
+
 						if (similarAttributes == numAttributes){
-							
+
 							col = currentRow.size();
 							row = result.rows.size();
 							continue;
@@ -89,11 +89,11 @@ namespace dbmsFunctions{
 					continue;
 				}
 			}
-			
+
 		}
 
 		return result;
-		
+
 	}
 
 	//This function takes in 2 tables, and an attribute that they share, it returns a table containing the natural join of these tables
@@ -103,7 +103,7 @@ namespace dbmsFunctions{
 
 		Attribute NJkey("NJID", "int", "primary key");	//this will be the key of the resulting table
 
-		attributeList.push_back(NJkey);	
+		attributeList.push_back(NJkey);
 		attributeList.push_back(attribute);
 
 		int atrbIndexA = 0;
@@ -111,7 +111,7 @@ namespace dbmsFunctions{
 
 		//add attributes of tableA and tableB to result table
 		for (int i = 0; i < tableA.attributes.size(); i++){
-			
+
 			if (tableA.attributes[i].name != attribute.name){
 				attributeList.push_back(tableA.attributes[i]);
 			}
@@ -167,7 +167,7 @@ namespace dbmsFunctions{
 			}
 
 		}
-		
+
 		return result;
 	}
 
@@ -320,7 +320,7 @@ namespace dbmsFunctions{
 
 
 	//create table function in the list of operating functions 
-	vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name){
+	vector<Table> createTable(vector<Table> &_tablist, vector<Attribute> _attr, string _name){
 		Table newTab(_attr, _name);
 		_tablist.push_back(newTab);
 		return _tablist;
@@ -362,7 +362,7 @@ namespace dbmsFunctions{
 
 		Attribute attTemp1("", "");
 		Attribute attTemp2("", "");
-		
+
 		Attribute* attribute1 = NULL;
 		Attribute* attribute2 = NULL;
 

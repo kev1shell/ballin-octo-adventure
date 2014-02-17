@@ -1,0 +1,18 @@
+until you reach =, <, >, or ! take in input from the beginning 					//(aname == name) 
+	store that input as the attribute name 										//store "aname"
+store the =, <, >, ! and look at next token 	//store "=" or "<" or ">" or "!"
+	if next token is =							//append next token so now "=="						
+		compare "==" case OR compare "!=" case OR compare "<=" case OR compare ">=" case
+	else if next token is next name 			//for example "(age < age2)"
+		store next name 						// in ^ example store age2
+		and begin <, or > case
+call function with condition and store table returned;
+		
+get next token
+	if next token ")" 
+		exit
+	else if next tokens "&&"
+		back to top
+	else if next tokens "||"
+		back to top
+	

@@ -1,306 +1,499 @@
-// TableClass1.cpp : Defines the entry point for the console application.
-//
-
 #include "stdafx.h"
+#include "dbmsFunctions.h"
 
+using namespace dbmsFunctions;
 #include <stdio.h>
-#include <tchar.h>
-#include "Table.h"
+#include <ctype.h>
+#include <string>
+#include <vector>
 #include <iostream>
 
-bool testing = true;
 
-void crossProduct(Table _table1, Table _table2);
-void projection(Table _table, string _attrName);
-void setDifference(Table _tab1, Table _tab2);
-vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name);
-vector<Table> dropTable(vector<Table> _tablist, string _name);
-void renameAttr(Table &_table, Attribute _attr, string _newName);
-void updateValue(Table &_table, string rowPrimaryKey, Attribute _attr, string newValue);
-void deleteRow(Table &_table, string primaryKey);
-void insertRow(Table &_table, vector <string> addRow);
+//notes for parser_CREATETABLE.
+#define identifier (1)
+#define number (2)
+#define op (3)				// < (when not used as an arrow), >, &, |, +, - (when not used as an arrow), *, !, =
+#define punc (4)			// < (when not used as an arrow), comma, (, ), - (when not used as an arrow), ;
+#define quotes (5)
 
-int main(int argc, _TCHAR* argv[])
-{
-	vector<Table> tableList;
-	//Table 1 Test: ORDER TABLE
-	Attribute order_id("order_id", "int", "primary key");
-	Attribute order_paymentMethod("order_paymentMethod", "string");
+//testing booleans
+#define testing (false)		//used for testing tokenizer function
+#define testingMain (true)	//used for testing main function
+#define testingParserCreateTable (false)
 
-	vector<Attribute> aList = { order_id, order_paymentMethod };
+using namespace std;
 
-	Table order_table(aList, "Order Table");
 
-	vector <string> rowrow = { "0", "credit" };
-	vector <string> rowyourboat = { "1", "counterfit?" };
+//TABLES STORED IN VECTOR
+vector <Table> allTables;
 
-	order_table.pushBackRow(rowrow);
-	order_table.pushBackRow(rowyourboat);
+struct Token {
+	string content;
 
-	order_table.printTable(order_table);
+	int type;   // type can be: identifier, number, op (!, <, >, etc.), punc, quotes
 
-	//Table 2 Test: USER Table
-	Attribute user_id("user_id", "int", "primary key");
-	Attribute user_name("user_name", "string");
-	Attribute privilege_level("privilege_level", "string");
-
-	vector<Attribute> user_attributes = { user_id, user_name, privilege_level };
-
-	Table user_table(user_attributes, "User Table");
-	Table user_table2(user_attributes, "User Table 2");
-	vector<string> newRow = { "0", "Bobby", "admin" };
-	vector<string> newer = { "1", "Will", "guest" };
-	vector<string> newest = { "2", "John", "guest" };
-
-	user_table.pushBackRow(newRow);
-	user_table.pushBackRow(newer);
-	user_table.pushBackRow(newest);
-	user_table.printTable(user_table);
-
-	renameAttr(user_table, privilege_level, "access_level");
-
-	user_table.printTable(user_table);
-	
-	cout << endl;
-
-	crossProduct(order_table, user_table);
-	projection(user_table, "user_id");
-	projection(user_table, "user_name");
-	setDifference(user_table, order_table);
-	setDifference(order_table, user_table);
-
-	cout << endl;
-	cout << "UPDATE VALUE" << endl;
-	updateValue(user_table, "0", user_id, "100");
-	user_table.printTable(user_table);
-	
-	cout << endl;
-	vector <string> newuserrowwww = { "0", "!xobile", "guest" };
-	insertRow(user_table, newuserrowwww);
-	user_table.printTable(user_table);
-
-	cout << endl;
-	deleteRow(user_table, "0");
-	user_table.printTable(user_table);
-	return 1;
-}
-
-//print out every possible combination of rows in table 1 with rows in table 2.
-void crossProduct(Table _table1, Table _table2)
-{
-	std::cout << "Cross Product Function will print all possible combinations of rows in first column"
-		<< " with rows in second column." << endl << endl;
-	for (int x = 0; x < _table1.getNumRows(); x++)
+	Token(string _content, int _type)
 	{
-		vector <string> table1RowPrimaryKeys; //stores primary key values for row 
-		vector <string> table1RowPKnames; //stores primary key names for table 1
+		content = _content;
+		type = _type;
+	}
 
-		for (int z = 0; z < _table1.getNumAttrs(); z++)
+
+};
+
+//*********************************************************************TEST INPUTS********************************************************
+string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
+//string testString = "dogs <- select (kind == \"dog\") animals;";
+
+
+//*********************************************************************FUNCTION HEADERS***************************************************
+vector<Token> tokenizer(int startLoc, string s);
+void parser_CreateTable(vector <Token> cmd);
+
+int main()
+{
+	//if the input is a query (idk how to spell tht) it includes a "<-" in it.
+	size_t functionType = testString.find("<-");
+	if (functionType != string::npos)
+	{
+		//if "<-" is found go thru query calls (e.g. select, project, etc.)
+		if (testString.substr(functionType + 3, 6) == "select")
 		{
-			if (_table1.attrKeyAt(z) == "primary key")
+			vector <Token> select;
+			select = tokenizer(0, testString);
+			if (testingMain)
 			{
-				table1RowPrimaryKeys.push_back(_table1.getRowAttr(x, z));
-				table1RowPKnames.push_back(_table1.attrNameAt(z));
+				for (int x = 0; x < select.size(); x++)
+				{
+					cout << select[x].content;
+				}
+				cout << endl;
 			}
 		}
-
-		for (int y = 0; y < _table2.getNumRows(); y++)
+	}
+	else
+	{
+		//else go thru commands (e.g. "CREATE TABLE", "SHOW", etc.)
+		if (testString.substr(0, 12) == "CREATE TABLE")
 		{
-			//print Table 1 name and primary keys || table 2 name and primary keys of the specific row we are in right now
-
-			vector <string> table2RowPrimaryKEys; //stores primary key values for row
-			vector <string> table2RowsPKnames; //stores primary key names for table 2
-			for (int a = 0; a < _table2.getNumAttrs(); a++)
+			if (testingMain)
 			{
-				if (_table2.attrKeyAt(a) == "primary key");
+				cout << testString.substr(0, 12) << endl;
+			}
+
+			vector <Token> createTable = tokenizer(13, testString);
+
+			if (testingMain)
+			{
+				for (int x = 0; x < createTable.size(); x++)
 				{
-					table2RowPrimaryKEys.push_back(_table2.getRowAttr(y, a));
-					table2RowsPKnames.push_back(_table2.attrNameAt(a));
+					cout << createTable[x].content << " " << createTable[x].type << endl << endl;
+				}
+				cout << endl;
+			}
+			//after parser called the following is sotred in a vector "animals(nameVARCHAR(20),kindVARCHAR(8),yearsINTEGER)PRIMARYKEY(name,kind);"
+			//call parserCreateTable("animals (name VARCHAR(10));") in parserFunctions namespace
+
+			parser_CreateTable(createTable);
+
+		}
+		// else if()
+	}
+	return 0;
+}
+
+//Turns string input s into tokens starting from a specified position in the string (startLoc); Returns a vector of the tokens
+vector<Token> tokenizer(int startLoc, string s)
+{
+	int p = startLoc;
+	vector <Token> result;
+	while (p < s.length())
+	{
+		if (isalpha(s.at(p)))
+		{
+			// read until non-alpha-numeric
+			int q = p;
+			// cout << s.at(21) <<endl;
+			while (isalnum(s.at(q)) > 0)
+			{
+				// cout << s.at(q);
+				q++;
+			}
+			Token t(s.substr(p, q - p), identifier);
+			result.push_back(t);
+			p = q;
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (isdigit(s[p]))
+		{
+			// read until non-numeric
+			int q = p;
+			while (isdigit(s[q]))
+			{
+				q++;
+
+			}
+			Token t(s.substr(p, q - p), number);
+			result.push_back(t);
+			p = q;		// p += num_length;
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == ' ')
+		{
+			int q = p;
+			p++;
+		}
+		else if (s[p] == '(')
+		{
+			// create token('(')
+			p++;
+			Token t("(", punc);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == ')')
+		{
+			p++;
+			Token t(")", punc);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == ',')
+		{
+			p++;
+			Token t(",", punc);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '>')
+		{
+			p++;
+			Token t(">", op);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '<')
+		{
+			p++;
+			if (s[p + 1] != '-')
+			{
+				Token t("<", op);
+				result.push_back(t);
+			}
+			else
+			{
+				Token t("<", punc);
+				result.push_back(t);
+			}
+			if (testing)
+			{
+				cout << "Content: " << result[result.size()-1].content << " type: " << result[result.size()-1].type << endl;
+			}
+		}
+		else if (s[p] == '!')
+		{
+			p++;
+			Token t("!", op);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '&')
+		{
+			p++;
+			Token t("&", op);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '|')
+		{
+			p++;
+			Token t("|", op);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '=')
+		{
+			p++;
+			Token t("=", op);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '*')
+		{
+			p++;
+			Token t("*", op);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '+')
+		{
+			p++;
+			Token t("+", op);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '"')
+		{
+			p++;
+			Token t("\"", quotes);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+		}
+		else if (s[p] == '-')
+		{
+			p++;
+
+			if (s[p - 1] == '<')
+			{
+				Token t("-", punc);
+				result.push_back(t);
+			}
+			else
+			{
+				Token t("-", op);
+				result.push_back(t);
+			}
+
+			if (testing)
+			{
+				cout << "Content: " << result[result.size() - 1].content << " type: " << result[result.size() - 1].type << endl;
+			}
+		}
+		else if (s[p] == ';')
+		{
+			Token t(";", punc);
+			result.push_back(t);
+			if (testing)
+			{
+				cout << "Content: " << t.content << " type: " << t.type << endl;
+			}
+			//exit
+			return result;
+		}
+
+	}
+}
+
+void parser_CreateTable(vector<Token> cmd)
+{
+	string _name;							//stores name that will be passed to the dbms create table
+	vector <Attribute> attrs;				//stores attributes that will be passed to dbms the create 
+	int positionInInput;
+	vector <Token> attributes;				//stores attributes (in test string input: (name VARCHAR(20), kind VARCHAR(8), years INTEGER))
+	if (cmd[0].type == 1)
+	{
+		 _name = cmd[0].content;
+	}
+	else
+	{
+		cout << "ERROR: Create Table format incorrect. First word after Create Table should be name of table" << endl;
+		return;
+	}
+
+	if (cmd[1].type == punc)
+	{
+		//parse thru for equal number of open and closed parenthesis. store content of middle as vector of tokens and start working with tht
+		//for loop thru vector of tokens while storing in attribute list
+		int openParenthesisCount = 0;
+		int closedParenthesisCount = 0;
+		if (cmd[1].content == "(")
+		{
+			Token t("(", punc);
+			attributes.push_back(t);
+			openParenthesisCount++;
+			for (int x = 2; x < cmd.size(); x++)
+			{
+				if (cmd[x].content == ")")
+					closedParenthesisCount++;
+				else if (cmd[x].content == "(")
+					openParenthesisCount++;
+				
+				attributes.push_back(cmd[x]);
+
+				if (openParenthesisCount == closedParenthesisCount)
+				{
+					//update int position in input and use for next if/else clause with primary keys
+					positionInInput = x+1;
+					break;
 				}
 			}
 
-			std::cout << _table1.getTableName() << ": ";
-			for (int b = 0; b < table1RowPKnames.size(); b++)
+			if (testingParserCreateTable)
 			{
-				std::cout << table1RowPKnames[b] << " = " << table1RowPrimaryKeys[b];
+				cout << "Attributes vector <Tokens> = ";
+				for (int x = 0; x < attributes.size(); x++)
+				{
+					cout << attributes[x].content;
+				}
+				cout << endl;
 			}
 
-			std::cout << endl << "	" << _table2.getTableName();
-
-			for (int c = 0; c < table2RowPrimaryKEys.size(); c++)
+			//if no formatting error, go through newly created vector <Token> that should now contain the attribute list. and store attributes in vector <Attribute> attrs
+			if (openParenthesisCount != closedParenthesisCount)
 			{
-				std::cout << ": " << table2RowsPKnames[c] << " = " << table2RowPrimaryKEys[c] << " ";
+				cout << "ERROR: Create Table format incorrect. Check parenthesis" << endl;
+				return;
 			}
-			cout << endl;
-		}
-	}
-}
+			else
+			{
+				for (int x = 1; x < attributes.size(); x++)
+				{
+					if (cmd[x].type == identifier)
+					{
+						if (cmd[x + 1].type == identifier)
+						{
+							if (cmd[x + 1].content == "VARCHAR")
+							{
+								Attribute a(cmd[x].content, "string");
+								attrs.push_back(a);
+								int y = x + 1;
+								while (cmd[y].type != punc && cmd[y].content != ")")
+								{
+									y++;
+								}
+								x = y;
+							}
+							else if (cmd[x + 1].content == "INTEGER")
+							{
+								Attribute a(cmd[x].content, "int");
+								attrs.push_back(a);
+								x++;
+							}
+							else if (cmd[x + 1].content == "CHAR")
+							{
+								Attribute a(cmd[x].content, "char");
+								attrs.push_back(a);
+								x++;
+							}
+							else if (cmd[x + 1].content == "DOUBLE")
+							{
+								Attribute a(cmd[x].content, "double");
+								attrs.push_back(a);
+								x++;
+							}
+							else
+							{
+								cout << "ERROR: Create Table format incorrect. Expecting type name after identifier in attribute list." << endl;
+								return;
+							}
+						}
+						else
+						{
+							cout << "ERROR: Create Table format incorrect. Check attribute list entered." << endl;
+							return;
+						}
+					}
+					//dont do anything if they are commas
+				}
 
-// print the same attribute from every row of a table
-void projection(Table _table, string _attrName){
-	int desired;
-	bool match = false;
-	vector<vector<string>> rowList;
-	vector<Attribute> atts;
-	vector<string> names;
-	atts = _table.attributes;
-	rowList = _table.rows;
-	int numRows = rowList.size();
-	int attSize = atts.size();
-	for (int x = 0; x < attSize; x++){
-		names.push_back(atts[x].name);
-	}
-	for (int y = 0; y < attSize; y++){
-		if (_attrName == names[y]){
-			desired = y;
-			match = true;
-		}
-	}
-	if (match = true){
-		cout << "desired attribute: " << _attrName << endl;
-		for (int z = 0; z < numRows; z++){
-			cout << rowList[z][desired] << endl;
-		}
-	}
-	else cout << "desired attribute not in table" << endl;
-
-}
-
-// What does table 1 hold, that table 2 is missing
-void setDifference(Table _tab1, Table _tab2){
-	bool match = true;
-	bool rowMatch = false;
-	int numAtt = _tab1.attributes.size();
-	int numAtt2 = _tab2.attributes.size();
-	int numRow1 = _tab1.rows.size();
-	int numRow2 = _tab2.rows.size();
-	vector<vector<string>> RowN = _tab1.rows;
-	vector<vector<string>> RowN2 = _tab2.rows;
-	vector<vector<string>> out;
-	vector<string> temp;
-	int outSize;
-	int rowSize;
-	int tempSize;
-
-	for (int r = 0; r < numRow1; r++){
-		for (int q = 0; q < numRow2; q++){
-			if (RowN[r] == RowN2[q]){
-				rowMatch = true;
+				if (testingParserCreateTable)
+				{
+					for (int x = 0; x < attrs.size(); x++)
+					{
+						cout << attrs[x].getName() << "     " << endl;
+					}
+				}
 			}
 		}
-		if (rowMatch == false){
-			out.push_back(RowN[r]);
-		}
-	}
-	outSize = out.size();
-	cout << "Set Difference between: " << _tab1.name << " & " << _tab2.name << endl;
-	for (int p = 0; p < outSize; p++){
-		temp = out[p];
-		tempSize = temp.size();
-		for (int h = 0; h < tempSize; h++){
-			cout << temp[h] << "     ";
-		}
-		cout << endl;
-	}
-}
-
-
-void renameAttr(Table &_table, Attribute _attr, string _newName)
-{
-	bool found = false;
-	for (int x = 0; x < _table.getNumAttrs(); x++)
-	{
-		if (_table.attrNameAt(x) == _attr.getName())
+		else
 		{
-			_table.setAttrNameAt(x, _newName);
-			found = true;
+			cout << "ERROR: Create Table format incorrect. Expecting open parenthesis after table name" << endl;
+			return;
 		}
 	}
-	if (!found)
+	else
 	{
-		std::cout << "Attribute was not found in renameAttr() function." << endl;
+		cout << "ERROR: Create Table format incorrect. Missing open parenthesis. Attributes list." << endl;
+		return;
 	}
-	else if (testing)
+
+	//Go through last part of vector <Token> cmd passed in and identify primary keys. After identifying set primary keys in vector<Attribute> attr
+	if (cmd[positionInInput].type == identifier && cmd[positionInInput].content == "PRIMARY" && cmd[positionInInput+1].content == "KEY")
 	{
-		std::cout << "Successfully changed name of attribute." << endl;
-	}
-}
-
-//create table function in the list of operating functions 
-vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name){
-	Table newTab(_attr, _name);
-	_tablist.push_back(newTab);
-	return _tablist;
-
-}
-
-//function to remove a table from the list of operating tables
-vector<Table> dropTable(vector<Table> _tablist, string _name){
-	int listSize = _tablist.size();
-	if (listSize == 0){
-		cout << "dropTable called on empty Table vector!" << endl;
-		return _tablist;
-	}
-	else{
-		string tableName;
-		int perp = 0;
-		bool found = false;
-		cout << "size of list: " << listSize << endl;
-		for (int x = 0; x < listSize; x++){
-			tableName = _tablist[x].name;
-			if (_name == tableName)
-				perp = x;
-			found = true;
-		}
-		if (found == true){
-			_tablist.erase(_tablist.begin() + perp);
-			cout << "size after erase: " << _tablist.size();
-		}
-		return _tablist;
-	}
-}
-
-void updateValue(Table &_table, string rowPrimaryKey, Attribute _attr, string newValue)
-{
-	int rowloc, attrloc;
-	for (int x = 0; x < _table.getNumRows(); x++)
-	{
-		//find location in row vector of item requested using primary key
-		if (_table.getPrimaryKey(x) == rowPrimaryKey)
+		positionInInput = positionInInput + 2;
+		if (cmd[positionInInput].type != punc && cmd[positionInInput].content != "(")
 		{
-			rowloc = x;
-			break;
+			cout << "ERROR: Create Table format incorrect. Expecting \"(\" after \"PRIMARY KEY\"" << endl;
+			return;
 		}
-	}
-
-	for (int x = 0; x < _table.getNumAttrs(); x++)
-	{
-		if (_attr.getKeyType() == _table.attrKeyAt(x) && _attr.getName() == _table.attrNameAt(x) && _attr.getType() == _table.attrTypeAt(x))
+		else
 		{
-			attrloc = x;
-			break;
+			positionInInput++;
+			while (positionInInput < cmd.size())
+			{
+				if (cmd[positionInInput].type == identifier)
+				{
+					string pk = cmd[positionInInput].content;
+					for (int x = 0; x < attrs.size(); x++)
+					{
+						if (attrs[x].getName() == cmd[positionInInput].content)
+						{
+							attrs[x].setPrimaryKey();
+						}
+					}
+					positionInInput++;
+				}
+				else if (cmd[positionInInput].content == ";")
+				{
+					break;
+				}
+				else if (cmd[positionInInput].type == punc)
+				{
+					positionInInput++;
+				}
+				else
+				{
+					cout << "ERROR: Create Table format incorrect. Check Primary Key part of expression." << endl;
+					return;
+				}
+			}
 		}
 	}
-
-	_table.updateVal(rowloc, attrloc, newValue);
-}
-
-void insertRow(Table &_table, vector <string> addRow)
-{
-	_table.pushBackRow(addRow);
-}
-
-void deleteRow(Table &_table, string primaryKey)
-{
-	int rowloc;
-	for (int x = 0; x < _table.getNumRows(); x++)
+	else
 	{
-		//find location in row vector of item requested using primary key
-		if (_table.getPrimaryKey(x) == primaryKey)
-		{
-			rowloc = x;
-			break;
-		}
+		cout << "ERROR: Create Table format incorrect. Primary Keys not identified. Even if table doesn't include Primary Keys put PRIMARY KEY() in input line";
+		return;
 	}
-	_table.deleteRowAtLoc(rowloc);
+	createTable(allTables, attrs, _name);
+	cout << "The following table has been created:" << endl;
+	allTables[allTables.size() - 1].printTable(allTables[allTables.size() - 1]);
 }
