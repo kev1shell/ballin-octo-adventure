@@ -27,6 +27,7 @@ public:
 	string attrNameAt(int loc);
 	string attrKeyAt(int loc);
 	string attrTypeAt(int loc);
+	vector<string> getRow(int loc);
 	vector<vector<string>> getRows();
 	vector<Attribute> getAttributes();
 
@@ -34,6 +35,7 @@ public:
 	void setAttrNameAt(int loc, string _newname);
 	void updateVal(int rowLoc, int attrLoc, string newValue);
 	void deleteRowAtLoc(int rowloc);
+	void setName(string _name);
 
 	//Prints
 	void printTable(Table _table);
