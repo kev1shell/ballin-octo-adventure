@@ -31,6 +31,8 @@ Attribute name{ "name", "string" };
 Attribute kind{ "kind", "string" };
 vector<Attribute> animAtt = { name, kind };
 Table animals(animAtt, "animals");
+Table dogs(animAtt, "dogs");
+Table cats(animAtt, "cats");
 
 struct Token {
 	string content;
@@ -48,23 +50,39 @@ struct Token {
 
 //*********************************************************************TEST INPUTS********************************************************
 //string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
-string testString = "a <- project (name, kind) animals;";
+//string testString = "a <- project (name, kind) animals;";
+string testString = "catsordogs <- dogs - cats;";
 
 
 //*********************************************************************FUNCTION HEADERS***************************************************
 vector<Token> tokenizer(int startLoc, string s);
 void parser_CreateTable(vector <Token> cmd);
 void parser_Project(vector <Token> cmd);
+void parser_setDif(vector<Token> cmd);
 vector<string> row1 = { "joe", "parrot" };
 vector<string> row2 = { "alice", "carrot" };
+vector<string> row3 = { "oliver", "chesire" };
+vector<string> row4 = { "felicity", "tabby" };
+vector<string> row5 = { "rick", "shelty" };
+vector<string> row6 = { "carl", "shitzu" };
 
 int main()
 {
 	animals.pushBackRow(row1);
 	animals.pushBackRow(row2);
+	dogs.pushBackRow(row5);
+	dogs.pushBackRow(row6);
+	cats.pushBackRow(row3);
+	cats.pushBackRow(row4);
+	allTables.push_back(dogs);
+	allTables.push_back(cats);
 	allTables.push_back(animals);
+	dogs.printTable(dogs);
+	cats.printTable(cats);
 	//if the input is a query (idk how to spell tht) it includes a "<-" in it.
 	size_t functionType = testString.find("<-");
+	size_t funcSubType = testString.find(" - ");
+	cout << "funcSub" << funcSubType << endl;
 	if (functionType != string::npos)
 	{
 		//if "<-" is found go thru query calls (e.g. select, project, etc.)
@@ -94,6 +112,21 @@ int main()
 				cout << endl;
 			}
 			parser_Project(project);
+		}
+		else if (funcSubType != string::npos){
+			cout << "started: ";
+			vector<Token> setDif;
+			setDif = tokenizer(0, testString);
+			cout << "thats a set dif: " << endl;
+			if (testingMain)
+			{
+				for (int x = 0; x < setDif.size(); x++)
+				{
+					cout << setDif[x].content;
+				}
+				cout << endl;
+			}
+			parser_setDif(setDif);
 		}
 	}
 
@@ -542,7 +575,6 @@ void parser_Project(vector<Token> cmd){
 		int closedParenthesisCount = 0;
 		if (cmd[4].content == "(")
 		{
-			cout << "yeah baby";
 			Token t("(", punc);
 			attributes.push_back(t);
 			openParenthesisCount++;
@@ -560,13 +592,12 @@ void parser_Project(vector<Token> cmd){
 				{
 					//update int position in input and use for next if/else clause with primary keys
 					positionInInput = x + 1;
-					cout << "wooooo";
 					break;
 
 				}
 			}
 
-			if (testingParserCreateTable)
+			if (testingParserProject)
 			{
 				cout << "Attributes vector <Tokens> = ";
 				for (int x = 0; x < attributes.size(); x++)
@@ -574,7 +605,6 @@ void parser_Project(vector<Token> cmd){
 					cout << attributes[x].content;
 				}
 				cout << endl;
-				cout << "butt";
 			}
 
 			//if no formatting error, go through newly created vector <Token> that should now contain the attribute list. and store attributes in vector <Attribute> attrs
@@ -585,7 +615,6 @@ void parser_Project(vector<Token> cmd){
 			}
 			else
 			{
-				cout << attributes.size() << endl;
 				int x = 0;
 				for (int z = 0; z < attributes.size(); z++)
 				{
@@ -594,7 +623,6 @@ void parser_Project(vector<Token> cmd){
 					{
 						Attribute a(cmd[x].content, "string");
 						attrs.push_back(a);
-						cout << endl << "1 son" << endl;
 						/*if (cmd[x+1].type == identifier){
 
 								int y = x + 1;
@@ -626,13 +654,13 @@ void parser_Project(vector<Token> cmd){
 
 			}
 
-			if (testingParserProject)
-			{
-				for (int x = 0; x < attrs.size(); x++)
-				{
-					cout << attrs[x].getName() << "     " << endl;
-				}
-			}
+		//	if (testingParserProject)
+			//{
+			//	for (int x = 0; x < attrs.size(); x++)
+			//	{
+			//		cout << attrs[x].getName() << "     " << endl;
+			//	}
+			//}
 
 
 		}
@@ -672,6 +700,47 @@ void parser_Project(vector<Token> cmd){
 	animals.printTable(animals);
 	Table projPrac = projection(allTables[tableLoc], attrs);
 	projPrac.changeName(_tableName);
-	cout << projPrac.getTableName() << endl;
+//	cout << projPrac.getTableName() << endl;
 	allTables.push_back(projPrac);
+}
+void parser_setDif(vector<Token> cmd){
+	int useThis = 0;
+	int useThisToo = 0;
+	int tableLoc = 0;
+	int tableLoc2 = 0;
+	string _newTableName = cmd[0].content;
+	for (int w = 0; w < cmd.size(); w++){
+		if (cmd[w].content == "<"){
+			if (cmd[w + 1].content == "-"){
+				useThis = w + 2;
+			}
+		}
+	}
+	useThisToo = useThis + 2; 
+	bool setDifFoundTable1 = false;
+	for (int x = 0; x < allTables.size(); x++){
+		if (cmd[useThis].content == allTables[x].getTableName())
+		{
+			tableLoc = x;
+			setDifFoundTable1 = true;
+			break;
+			cout << "table loc: " << x << endl;
+		}
+	}
+	bool setDifFoundTable2 = false;
+	for (int y = 0; y < allTables.size(); y++){
+		if (cmd[useThisToo].content == allTables[y].getTableName())
+		{
+			tableLoc = y;
+			setDifFoundTable2 = true;
+			break;
+			cout << "table loc2: " << y << endl;
+		}
+	}
+
+	Table setDif1 = setDifference(allTables[tableLoc], allTables[tableLoc2]);
+	setDif1.printTable(setDif1);
+	setDif1.changeName(_newTableName);
+	cout << setDif1.getTableName();
+
 }
