@@ -60,6 +60,9 @@ Table parser_difference(vector <Token> cmd);
 Table parser_cross_product(vector <Token> cmd);
 Table parser_natural_join(vector <Token> cmd);
 
+//atomic expression resolver
+Table atomicExpResolver(vector<Token> tokenList);
+
 int main()
 {
 	string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
@@ -136,6 +139,7 @@ int main()
 					}
 					else if (showTable[i].type == identifier)
 					{
+						//determine if identifier is a table name:
 						bool isTableName = false;
 						for (int j = 0; j < allTables.size(); j++)
 						{
@@ -619,6 +623,75 @@ void parser_CreateTable(vector<Token> cmd)
 	createTable(allTables, attrs, _name);
 	cout << "The following table has been created:" << endl;
 	allTables[allTables.size() - 1].printTable(allTables[allTables.size() - 1]);
+}
+
+Table atomicExpResolver(vector<Token> tokenList)
+{
+	int table1_index, table2_index;
+	
+	for (int currentToken = 0; currentToken < tokenList.size(); currentToken++)
+	{
+		if (tokenList[0].type == identifier)
+		{
+			bool isTable = false;
+
+			for (int i = 0; i < allTables.size(); i++)
+			{
+				if (allTables[i].getTableName() == tokenList[currentToken].content)
+				{
+					//token is a table
+					table1_index = i;
+					isTable = true;
+					break;
+				}
+			}
+
+			if (isTable)
+			{
+				if (currentToken + 2 < tokenList.size())
+				{
+					if (tokenList[currentToken + 1].type == op)
+					{
+						bool isTable = false;
+
+						for (int i = 0; i < allTables.size(); i++)
+						{
+							if (allTables[i].getTableName() == tokenList[currentToken + 2].content)
+							{
+								//token is a table
+								table2_index = i;
+								isTable = true;
+								break;
+							}
+						}
+
+						if (isTable)
+						{
+							//compute opperation and return table
+							if (tokenList[currentToken + 1].content == "+")
+							{
+								//compute union of currentToken and currentToken + 2
+								Table result = setUnion(allTables[table1_index], allTables[table2_index]);
+								return result;
+							}
+							else if (tokenList[currentToken + 1].content == "-")
+							{
+								//compute difference of currentToken and currentToken + 2
+								Table result = setDifference(allTables[table1_index], allTables[table2_index]);
+								return result;
+							}
+							else if (tokenList[currentToken + 1].content == "*")
+							{
+								//compute cross product of currentToken and currentToken + 2
+								//Table result = crossProduct(allTables[table1_index], allTables[table2_index]);
+								//return result;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 
