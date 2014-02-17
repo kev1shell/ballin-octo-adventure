@@ -65,8 +65,11 @@ Table atomicExpResolver(vector<Token> tokenList);
 
 int main()
 {
+	
+	
 	string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
-	string testString2 = "SHOW animals;";
+	string testString2 = "SHOW (animals JOIN animals) + animals;";
+	string testString3 = "SHOW animals + animals;";
 
 	vector <string> testStrings = {testString, testString2};
 
@@ -131,96 +134,29 @@ int main()
 					cout << endl;
 				}
 
-				for (int i = 0; i < showTable.size(); i++)
-				{
-					if (showTable[i].content == ";")
+				if (showTable.size() > 2){
+
+					vector<Token> newTokenList;
+
+					for (int i = 0; i < showTable.size()-1; i++)
 					{
-						break;
+						newTokenList.push_back(showTable[i]);
 					}
-					else if (showTable[i].type == identifier)
-					{
-						//determine if identifier is a table name:
-						bool isTableName = false;
-						for (int j = 0; j < allTables.size(); j++)
-						{
-							if (allTables[j].getTableName() == showTable[i].content)
-							{
-								//then identifer corresponds to a table in allTables. print this table.
-								isTableName = true;
-								allTables[j].printTable(allTables[j]);
-								break;
-							}
-						}
 
-						if (isTableName == false)
-						{
-							//check to see if identifer is a querry
-							
-							if (i + 1 < showTable.size())
-							{
-								vector <Token> tokensVect;
+					Table result = atomicExpResolver(newTokenList);
+					result.printTable(result);
 
-								for (int k = i + 1; k < showTable.size(); k++)
-								{
-									tokensVect.push_back(showTable[k]);
-								}
-
-								if (showTable[i].content == "select")
-								{
-									Table result = parser_select(tokensVect);
-									result.printTable(result);
-									break;
-								}
-								else if (showTable[i].content == "project")
-								{
-									Table result = parser_project(tokensVect);
-									result.printTable(result);
-									break;
-								}
-								else if (showTable[i].content == "rename")
-								{
-									Table result = parser_rename(tokensVect);
-									result.printTable(result);
-									break;
-								}
-								else if (showTable[i].content == "union")
-								{
-									Table result = parser_union(tokensVect);
-									result.printTable(result);
-									break;
-								}
-								else if (showTable[i].content == "difference")
-								{
-									Table result = parser_difference(tokensVect);
-									result.printTable(result);
-									break;
-								}
-								else if (showTable[i].content == "natural")
-								{
-									if (i + 2 < showTable.size())
-									{
-										if (showTable[i + 1].content == "join")
-										{
-											//remove first element from tokensVect
-											tokensVect.erase(tokensVect.begin());
-											Table result = parser_select(tokensVect);
-
-											result.printTable(result);
-											break;
-										}
-									}
-								}
-
-							}
-						}
-
-					}
-					else if (showTable[i].type == number){}
-					else if (showTable[i].type == op){}
-					else if (showTable[i].type == punc){}
-					else if (showTable[i].type == quotes){}
 				}
-
+				else
+				{
+					for (int i = 0; i < allTables.size(); i++)
+					{
+						if (allTables[i].getTableName() == showTable[0].content)
+						{
+							allTables[i].printTable(allTables[i]);
+						}
+					}
+				}
 			}
 		}
 
@@ -628,6 +564,16 @@ void parser_CreateTable(vector<Token> cmd)
 Table atomicExpResolver(vector<Token> tokenList)
 {
 	int table1_index, table2_index;
+
+	Table* table1 = NULL;
+	Table* table2 = NULL;
+
+	Attribute dummy("dummy", "string");
+	vector<Attribute> attributeList = {dummy};
+	Table tableA(attributeList, "tableA");
+	Table tableB(attributeList, "tableB");
+
+	string opperator = "";
 	
 	for (int currentToken = 0; currentToken < tokenList.size(); currentToken++)
 	{
@@ -641,6 +587,7 @@ Table atomicExpResolver(vector<Token> tokenList)
 				{
 					//token is a table
 					table1_index = i;
+					table1 = &allTables[i];
 					isTable = true;
 					break;
 				}
@@ -683,13 +630,641 @@ Table atomicExpResolver(vector<Token> tokenList)
 							else if (tokenList[currentToken + 1].content == "*")
 							{
 								//compute cross product of currentToken and currentToken + 2
-								//Table result = crossProduct(allTables[table1_index], allTables[table2_index]);
-								//return result;
+								Table result = crossProduct(allTables[table1_index], allTables[table2_index]);
+								return result;
+
+							}
+						}
+						else if (tokenList[currentToken + 2].content == "(")
+						{
+							//find corresponding closed parenthesis
+							int numOpenParens = 1;
+							int numClosedParens = 0;
+							int lastClosedParenIndex = 0;
+							for (int k = currentToken + 1; k < tokenList.size(); k++)
+							{
+								if (tokenList[k].content == "(")
+								{
+									numOpenParens++;
+								}
+								else if (tokenList[k].content == ")")
+								{
+									numClosedParens++;
+									if (numClosedParens == numOpenParens){
+										lastClosedParenIndex = k;
+										break;
+									}
+								}
+							}
+							if (numClosedParens != numOpenParens)
+							{
+								//ERROR not enough parenthesis
+								cout << "ERROR mismatched parenthesis" << endl;
+								Attribute ERROR("ERROR", "string");
+								vector<Attribute> attributeList = { ERROR };
+								Table result(attributeList, "ERROR");
+								return result;
+							}
+							else
+							{
+								//create new vector of tokens with tokens enclosed by outermost parens
+								vector<Token> newTokenList;
+								for (int k = currentToken + 1; k < lastClosedParenIndex; k++)
+								{
+									newTokenList.push_back(tokenList[k]);
+								}
+								tableB = atomicExpResolver(newTokenList);
+								table2 = &tableB;
+								currentToken = lastClosedParenIndex;
+								if (table1 != NULL && table2 != NULL)
+								{
+									//compute opperation and return table
+									Table tableA(table1->getAttributes(), table1->getTableName());
+									Table tableB(table2->getAttributes(), table2->getTableName());
+									
+									if (tokenList[currentToken + 1].content == "+")
+									{
+										//compute union of currentToken and currentToken + 2
+										Table result = setUnion(tableA, tableB);
+										return result;
+									}
+									else if (tokenList[currentToken + 1].content == "-")
+									{
+										//compute difference of currentToken and currentToken + 2
+										Table result = setDifference(tableA, tableB);
+										return result;
+									}
+									else if (tokenList[currentToken + 1].content == "*")
+									{
+										//compute cross product of currentToken and currentToken + 2
+										Table result = crossProduct(tableA, tableB);
+										return result;
+
+									}
+								}
+							}
+						}
+						else if (tokenList[0].content == "select") //if first token is an identifier but not a table;
+						{
+							vector<Token> newTokenList;
+							for (int k = 1; k < tokenList.size(); k++)
+							{
+								newTokenList.push_back(tokenList[k]);
+							}
+							//table2 = &parser_select(newTokenList);
+							
+						}
+						else if (tokenList[0].content == "project")
+						{
+							vector<Token> newTokenList;
+							for (int k = 1; k < tokenList.size(); k++)
+							{
+								newTokenList.push_back(tokenList[k]);
+							}
+							table2 = &parser_project(newTokenList);
+							//return result;
+
+						}
+						else if (tokenList[0].content == "rename")
+						{
+							vector<Token> newTokenList;
+							for (int k = 1; k < tokenList.size(); k++)
+							{
+								newTokenList.push_back(tokenList[k]);
+							}
+							table2 = &parser_rename(newTokenList);
+							//return result;
+						}
+						else {
+							//ERROR incorrect syntax
+							cout << "ERROR incorrect syntax" << endl;
+							Attribute ERROR("ERROR", "string");
+							vector<Attribute> attributeList = { ERROR };
+							Table result(attributeList, "ERROR");
+							return result;
+						}
+						if (table1 != NULL && table2 != NULL)
+						{
+							//compute opperation and return table
+							Table tableA(table1->getAttributes(), table1->getTableName());
+							Table tableB(table2->getAttributes(), table2->getTableName());
+
+							if (tokenList[currentToken + 1].content == "+")
+							{
+								//compute union of currentToken and currentToken + 2
+								Table result = setUnion(tableA, tableB);
+								return result;
+							}
+							else if (tokenList[currentToken + 1].content == "-")
+							{
+								//compute difference of currentToken and currentToken + 2
+								Table result = setDifference(tableA, tableB);
+								return result;
+							}
+							else if (tokenList[currentToken + 1].content == "*")
+							{
+								//compute cross product of currentToken and currentToken + 2
+								Table result = crossProduct(tableA, tableB);
+								return result;
+
+							}
+						}
+					}
+					else if (tokenList[currentToken + 1].content == "JOIN") //is the next token "JOIN"?
+					{
+						bool isTable = false;
+
+						for (int i = 0; i < allTables.size(); i++)
+						{
+							if (allTables[i].getTableName() == tokenList[currentToken + 2].content)
+							{
+								//token is a table
+								table2_index = i;
+								table2 = &allTables[i];
+								isTable = true;
+								break;
+							}
+						}
+
+						if (isTable)
+						{
+							//compute natural join
+							if (table1 != NULL && table2 != NULL)
+							{
+								Table tableA(table1->getAttributes(), table1->getTableName());
+								Table tableB(table2->getAttributes(), table2->getTableName());
+
+								string name = "";
+								string type = "";
+								string keyType = "";
+
+								for (int x = 0; x < tableA.getAttributes().size(); x++)
+								{
+									for (int y = 0; y < tableB.getAttributes().size(); y++)
+									{
+										if (tableA.getAttributes()[x].getName() == tableB.getAttributes()[y].getName() && tableA.getAttributes()[x].getType() == tableB.getAttributes()[y].getType())
+										{
+											name = tableA.getAttributes()[x].getName();
+											type = tableA.getAttributes()[x].getType();
+											keyType = tableA.getAttributes()[x].getKeyType();
+											x = tableA.getAttributes().size();
+											y = tableB.getAttributes().size();
+										}
+									}
+								}
+								if (name != "" && type != "")
+								{
+									Attribute attribute(name,type,keyType);
+									Table result = naturalJoin(tableA, tableB, attribute);
+									return result;
+								}
+							}
+						}
+						else if (tokenList[currentToken + 2].content == "(")
+						{
+							//find corresponding closed parenthesis
+							int numOpenParens = 1;
+							int numClosedParens = 0;
+							int lastClosedParenIndex = 0;
+							for (int k = currentToken + 1; k < tokenList.size(); k++)
+							{
+								if (tokenList[k].content == "(")
+								{
+									numOpenParens++;
+								}
+								else if (tokenList[k].content == ")")
+								{
+									numClosedParens++;
+									if (numClosedParens == numOpenParens){
+										lastClosedParenIndex = k;
+										break;
+									}
+								}
+							}
+							if (numClosedParens != numOpenParens)
+							{
+								//ERROR not enough parenthesis
+								cout << "ERROR mismatched parenthesis" << endl;
+								Attribute ERROR("ERROR", "string");
+								vector<Attribute> attributeList = { ERROR };
+								Table result(attributeList, "ERROR");
+								return result;
+							}
+							else
+							{
+								//create new vector of tokens with tokens enclosed by outermost parens
+								vector<Token> newTokenList;
+								for (int k = currentToken + 1; k < lastClosedParenIndex; k++)
+								{
+									newTokenList.push_back(tokenList[k]);
+								}
+								tableB = atomicExpResolver(newTokenList);
+								table2 = &tableB;
+								currentToken = lastClosedParenIndex;
+
+								if (table1 != NULL && table2 != NULL)
+								{
+									//compute natural join and return table
+									Table tableA(table1->getAttributes(), table1->getTableName());
+									Table tableB(table2->getAttributes(), table2->getTableName());
+
+									string name = "";
+									string type = "";
+									string keyType = "";
+
+									for (int x = 0; x < tableA.getAttributes().size(); x++)
+									{
+										for (int y = 0; y < tableB.getAttributes().size(); y++)
+										{
+											if (tableA.getAttributes()[x].getName() == tableB.getAttributes()[y].getName() && tableA.getAttributes()[x].getType() == tableB.getAttributes()[y].getType())
+											{
+												name = tableA.getAttributes()[x].getName();
+												type = tableA.getAttributes()[x].getType();
+												keyType = tableA.getAttributes()[x].getKeyType();
+												x = tableA.getAttributes().size();
+												y = tableB.getAttributes().size();
+											}
+										}
+									}
+									if (name != "" && type != "")
+									{
+										Attribute attribute(name, type, keyType);
+										Table result = naturalJoin(tableA, tableB, attribute);
+										return result;
+									}
+								}
 							}
 						}
 					}
 				}
+				else
+				{
+					//this was the only token provided to the function
+					Table tableA(table1->getAttributes(), table1->getTableName());
+					return tableA;
+				}
 			}
+			else if (tokenList[0].content == "select") //if first token is an identifier but not a table;
+			{
+				vector<Token> newTokenList;
+				for (int k = 1; k < tokenList.size(); k++)
+				{
+					newTokenList.push_back(tokenList[k]);
+				}
+				Table result = parser_select(newTokenList);
+				return result;
+			}
+			else if (tokenList[0].content == "project")
+			{
+				vector<Token> newTokenList;
+				for (int k = 1; k < tokenList.size(); k++)
+				{
+					newTokenList.push_back(tokenList[k]);
+				}
+				Table result = parser_project(newTokenList);
+				return result;
+
+			}
+			else if (tokenList[0].content == "rename")
+			{
+				vector<Token> newTokenList;
+				for (int k = 1; k < tokenList.size(); k++)
+				{
+					newTokenList.push_back(tokenList[k]);
+				}
+				Table result = parser_rename(newTokenList);
+				return result;
+			}
+			else {
+				//ERROR incorrect syntax
+				cout << "ERROR incorrect syntax" << endl;
+				Attribute ERROR("ERROR", "string");
+				vector<Attribute> attributeList = { ERROR };
+				Table result(attributeList, "ERROR");
+				return result;
+			}
+		}
+		if (tokenList[currentToken].content == "(")
+		{
+			//find corresponding closed parenthesis
+			int numOpenParens = 1;
+			int numClosedParens = 0;
+			int lastClosedParenIndex = 0;
+			for (int k = currentToken + 1; k < tokenList.size(); k++)
+			{
+				if (tokenList[k].content == "(")
+				{
+					numOpenParens++;
+				}
+				else if (tokenList[k].content == ")")
+				{
+					numClosedParens++;
+					if (numClosedParens == numOpenParens){
+						lastClosedParenIndex = k;
+						break;
+					}
+				}
+			}
+			if (numClosedParens != numOpenParens)
+			{
+				//ERROR not enough parenthesis
+				cout << "ERROR mismatched parenthesis" << endl;
+				Attribute ERROR("ERROR", "string");
+				vector<Attribute> attributeList = { ERROR };
+				Table result(attributeList, "ERROR");
+				return result;
+			}
+			else
+			{
+				//create new vector of tokens with tokens enclosed by outermost parens
+				vector<Token> newTokenList;
+				for (int k = currentToken + 1; k < lastClosedParenIndex; k++)
+				{
+					newTokenList.push_back(tokenList[k]);
+				}
+				tableA = atomicExpResolver(newTokenList);
+				table1 = &tableA;
+				currentToken = lastClosedParenIndex;
+			}
+			if (table1 != NULL && currentToken + 2 < tokenList.size())
+			{
+				if (tokenList[currentToken + 1].type == op)
+				{
+					bool isTable = false;
+
+					for (int i = 0; i < allTables.size(); i++)
+					{
+						if (allTables[i].getTableName() == tokenList[currentToken + 2].content)
+						{
+							//token is a table
+							table2_index = i;
+							table2 = &allTables[i];
+							isTable = true;
+							break;
+						}
+					}
+					if (isTable)
+					{
+						if (table1 != NULL && table2 != NULL)
+						{
+							//compute opperation and return table
+							Table tableA(table1->getAttributes(), table1->getTableName());
+							Table tableB(table2->getAttributes(), table2->getTableName());
+
+							if (tokenList[currentToken + 1].content == "+")
+							{
+								//compute union of currentToken and currentToken + 2
+								Table result = setUnion(tableA, tableB);
+								return result;
+							}
+							else if (tokenList[currentToken + 1].content == "-")
+							{
+								//compute difference of currentToken and currentToken + 2
+								Table result = setDifference(tableA, tableB);
+								return result;
+							}
+							else if (tokenList[currentToken + 1].content == "*")
+							{
+								//compute cross product of currentToken and currentToken + 2
+								Table result = crossProduct(tableA, tableB);
+								return result;
+
+							}
+						}
+					}
+					else if (tokenList[currentToken + 2].content == "(")
+					{
+						//find corresponding closed parenthesis
+						int numOpenParens = 1;
+						int numClosedParens = 0;
+						int lastClosedParenIndex = 0;
+						for (int k = currentToken + 1; k < tokenList.size(); k++)
+						{
+							if (tokenList[k].content == "(")
+							{
+								numOpenParens++;
+							}
+							else if (tokenList[k].content == ")")
+							{
+								numClosedParens++;
+								if (numClosedParens == numOpenParens){
+									lastClosedParenIndex = k;
+									break;
+								}
+							}
+						}
+						if (numClosedParens != numOpenParens)
+						{
+							//ERROR not enough parenthesis
+							cout << "ERROR mismatched parenthesis" << endl;
+							Attribute ERROR("ERROR", "string");
+							vector<Attribute> attributeList = { ERROR };
+							Table result(attributeList, "ERROR");
+							return result;
+						}
+						else
+						{
+							//create new vector of tokens with tokens enclosed by outermost parens
+							vector<Token> newTokenList;
+							for (int k = currentToken + 1; k < lastClosedParenIndex; k++)
+							{
+								newTokenList.push_back(tokenList[k]);
+							}
+							tableB = atomicExpResolver(newTokenList);
+							table2 = &tableB;
+							currentToken = lastClosedParenIndex;
+							if (table1 != NULL && table2 != NULL)
+							{
+								//compute opperation and return table
+								Table tableA(table1->getAttributes(), table1->getTableName());
+								Table tableB(table2->getAttributes(), table2->getTableName());
+
+								if (tokenList[currentToken + 1].content == "+")
+								{
+									//compute union of currentToken and currentToken + 2
+									Table result = setUnion(tableA, tableB);
+									return result;
+								}
+								else if (tokenList[currentToken + 1].content == "-")
+								{
+									//compute difference of currentToken and currentToken + 2
+									Table result = setDifference(tableA, tableB);
+									return result;
+								}
+								else if (tokenList[currentToken + 1].content == "*")
+								{
+									//compute cross product of currentToken and currentToken + 2
+									Table result = crossProduct(tableA, tableB);
+									return result;
+
+								}
+							}
+						}
+					}
+					else
+					{
+						//ERROR incorrect syntax
+						cout << "ERROR incorrect syntax" << endl;
+						Attribute ERROR("ERROR", "string");
+						vector<Attribute> attributeList = { ERROR };
+						Table result(attributeList, "ERROR");
+						return result;
+					}
+				}
+				else if (tokenList[currentToken + 1].content == "JOIN") //is the next token "JOIN"?
+				{
+					bool isTable = false;
+
+					for (int i = 0; i < allTables.size(); i++)
+					{
+						if (allTables[i].getTableName() == tokenList[currentToken + 2].content)
+						{
+							//token is a table
+							table2_index = i;
+							table2 = &allTables[i];
+							isTable = true;
+							break;
+						}
+					}
+
+					if (isTable)
+					{
+						//compute natural join
+						if (table1 != NULL && table2 != NULL)
+						{
+							Table tableA(table1->getAttributes(), table1->getTableName());
+							Table tableB(table2->getAttributes(), table2->getTableName());
+
+							string name = "";
+							string type = "";
+							string keyType = "";
+
+							for (int x = 0; x < tableA.getAttributes().size(); x++)
+							{
+								for (int y = 0; y < tableB.getAttributes().size(); y++)
+								{
+									if (tableA.getAttributes()[x].getName() == tableB.getAttributes()[y].getName() && tableA.getAttributes()[x].getType() == tableB.getAttributes()[y].getType())
+									{
+										name = tableA.getAttributes()[x].getName();
+										type = tableA.getAttributes()[x].getType();
+										keyType = tableA.getAttributes()[x].getKeyType();
+										x = tableA.getAttributes().size();
+										y = tableB.getAttributes().size();
+									}
+								}
+							}
+							if (name != "" && type != "")
+							{
+								Attribute attribute(name, type, keyType);
+								Table result = naturalJoin(tableA, tableB, attribute);
+								return result;
+							}
+						}
+					}
+					else if (tokenList[currentToken + 2].content == "(")
+					{
+						//find corresponding closed parenthesis
+						int numOpenParens = 1;
+						int numClosedParens = 0;
+						int lastClosedParenIndex = 0;
+						for (int k = currentToken + 1; k < tokenList.size(); k++)
+						{
+							if (tokenList[k].content == "(")
+							{
+								numOpenParens++;
+							}
+							else if (tokenList[k].content == ")")
+							{
+								numClosedParens++;
+								if (numClosedParens == numOpenParens){
+									lastClosedParenIndex = k;
+									break;
+								}
+							}
+						}
+						if (numClosedParens != numOpenParens)
+						{
+							//ERROR not enough parenthesis
+							cout << "ERROR mismatched parenthesis" << endl;
+							Attribute ERROR("ERROR", "string");
+							vector<Attribute> attributeList = { ERROR };
+							Table result(attributeList, "ERROR");
+							return result;
+						}
+						else
+						{
+							//create new vector of tokens with tokens enclosed by outermost parens
+							vector<Token> newTokenList;
+							for (int k = currentToken + 1; k < lastClosedParenIndex; k++)
+							{
+								newTokenList.push_back(tokenList[k]);
+							}
+							tableB = atomicExpResolver(newTokenList);
+							table2 = &tableB;
+							currentToken = lastClosedParenIndex;
+
+							if (table1 != NULL && table2 != NULL)
+							{
+								//compute natural join and return table
+								Table tableA(table1->getAttributes(), table1->getTableName());
+								Table tableB(table2->getAttributes(), table2->getTableName());
+
+								string name = "";
+								string type = "";
+								string keyType = "";
+
+								for (int x = 0; x < tableA.getAttributes().size(); x++)
+								{
+									for (int y = 0; y < tableB.getAttributes().size(); y++)
+									{
+										if (tableA.getAttributes()[x].getName() == tableB.getAttributes()[y].getName() && tableA.getAttributes()[x].getType() == tableB.getAttributes()[y].getType())
+										{
+											name = tableA.getAttributes()[x].getName();
+											type = tableA.getAttributes()[x].getType();
+											keyType = tableA.getAttributes()[x].getKeyType();
+											x = tableA.getAttributes().size();
+											y = tableB.getAttributes().size();
+										}
+									}
+								}
+								if (name != "" && type != "")
+								{
+									Attribute attribute(name, type, keyType);
+									Table result = naturalJoin(tableA, tableB, attribute);
+									return result;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					//ERROR incorrect syntax
+					cout << "ERROR incorrect syntax" << endl;
+					Attribute ERROR("ERROR", "string");
+					vector<Attribute> attributeList = { ERROR };
+					Table result(attributeList, "ERROR");
+					return result;
+				}
+			}
+			else
+			{
+				//ERROR incorrect syntax
+				cout << "ERROR incorrect syntax" << endl;
+				Attribute ERROR("ERROR", "string");
+				vector<Attribute> attributeList = { ERROR };
+				Table result(attributeList, "ERROR");
+				return result;
+			}
+		}
+		else
+		{
+			//ERROR incorrect syntax
+			cout << "ERROR incorrect syntax" << endl;
+			Attribute ERROR("ERROR", "string");
+			vector<Attribute> attributeList = { ERROR };
+			Table result(attributeList, "ERROR");
+			return result;
 		}
 	}
 }

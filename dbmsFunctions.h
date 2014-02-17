@@ -581,13 +581,13 @@ namespace dbmsFunctions{
 			for (int z = 0; z < _table2.getNumRows(); z++)
 			{
 				vector <string> addThisRow;	//row to be added to return table.
-				vector <string> table1row = _table1.getRow(x);
+				vector <string> table1row = _table1.getRows()[x];
 				for (int y = 0; y < table1row.size(); y++)
 				{
 					addThisRow.push_back(table1row[y]);
 				}
 
-				vector <string> table2row = _table2.getRow(z);
+				vector <string> table2row = _table2.getRows()[z];
 				for (int a = 0; a < table2row.size(); a++)
 				{
 					addThisRow.push_back(table2row[a]);
