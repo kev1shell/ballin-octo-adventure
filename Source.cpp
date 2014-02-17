@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "dbmsFunctions.h"
 
+
 using namespace dbmsFunctions;
+
 #include <stdio.h>
 #include <ctype.h>
 #include <string>
@@ -42,7 +44,7 @@ struct Token {
 };
 
 //*********************************************************************TEST INPUTS********************************************************
-string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
+
 //string testString = "dogs <- select (kind == \"dog\") animals;";
 
 
@@ -50,55 +52,176 @@ string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), ye
 vector<Token> tokenizer(int startLoc, string s);
 void parser_CreateTable(vector <Token> cmd);
 
+Table parser_select(vector <Token> cmd);
+Table parser_project(vector <Token> cmd);
+Table parser_rename(vector <Token> cmd);
+Table parser_union(vector <Token> cmd);
+Table parser_difference(vector <Token> cmd);
+Table parser_cross_product(vector <Token> cmd);
+Table parser_natural_join(vector <Token> cmd);
+
 int main()
 {
-	//if the input is a query (idk how to spell tht) it includes a "<-" in it.
-	size_t functionType = testString.find("<-");
-	if (functionType != string::npos)
+	string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
+	string testString2 = "SHOW animals;";
+
+	vector <string> testStrings = {testString, testString2};
+
+	for (int iter = 0; iter < testStrings.size(); iter++)
 	{
-		//if "<-" is found go thru query calls (e.g. select, project, etc.)
-		if (testString.substr(functionType + 3, 6) == "select")
+		
+		//if the input is a query (idk how to spell tht) it includes a "<-" in it.
+		size_t functionType = testStrings[iter].find("<-");
+		if (functionType != string::npos)
 		{
-			vector <Token> select;
-			select = tokenizer(0, testString);
-			if (testingMain)
+			//if "<-" is found go thru query calls (e.g. select, project, etc.)
+			if (testStrings[iter].substr(functionType + 3, 6) == "select")
 			{
-				for (int x = 0; x < select.size(); x++)
+				vector <Token> select;
+				select = tokenizer(0, testStrings[iter]);
+				if (testingMain)
 				{
-					cout << select[x].content;
+					for (int x = 0; x < select.size(); x++)
+					{
+						cout << select[x].content;
+					}
+					cout << endl;
 				}
-				cout << endl;
 			}
 		}
-	}
-	else
-	{
-		//else go thru commands (e.g. "CREATE TABLE", "SHOW", etc.)
-		if (testString.substr(0, 12) == "CREATE TABLE")
+		else
 		{
-			if (testingMain)
+			//else go thru commands (e.g. "CREATE TABLE", "SHOW", etc.)
+			if (testStrings[iter].substr(0, 12) == "CREATE TABLE")
 			{
-				cout << testString.substr(0, 12) << endl;
-			}
-
-			vector <Token> createTable = tokenizer(13, testString);
-
-			if (testingMain)
-			{
-				for (int x = 0; x < createTable.size(); x++)
+				if (testingMain)
 				{
-					cout << createTable[x].content << " " << createTable[x].type << endl << endl;
+					cout << testStrings[iter].substr(0, 12) << endl;
 				}
-				cout << endl;
+
+				vector <Token> createTable = tokenizer(13, testStrings[iter]);
+
+				if (testingMain)
+				{
+					for (int x = 0; x < createTable.size(); x++)
+					{
+						cout << createTable[x].content << " " << createTable[x].type << endl << endl;
+					}
+					cout << endl;
+				}
+				//after parser called the following is sotred in a vector "animals(nameVARCHAR(20),kindVARCHAR(8),yearsINTEGER)PRIMARYKEY(name,kind);"
+				//call parserCreateTable("animals (name VARCHAR(10));") in parserFunctions namespace
+
+				parser_CreateTable(createTable);
+
 			}
-			//after parser called the following is sotred in a vector "animals(nameVARCHAR(20),kindVARCHAR(8),yearsINTEGER)PRIMARYKEY(name,kind);"
-			//call parserCreateTable("animals (name VARCHAR(10));") in parserFunctions namespace
+			else if (testStrings[iter].substr(0, 4) == "SHOW")
+			{
+				vector <Token> showTable = tokenizer(5, testStrings[iter]);
 
-			parser_CreateTable(createTable);
+				if (testingMain)
+				{
+					for (int x = 0; x < showTable.size(); x++)
+					{
+						cout << "| " << showTable[x].content << ", " << showTable[x].type << " |";
+					}
+					cout << endl;
+				}
 
+				for (int i = 0; i < showTable.size(); i++)
+				{
+					if (showTable[i].content == ";")
+					{
+						break;
+					}
+					else if (showTable[i].type == identifier)
+					{
+						bool isTableName = false;
+						for (int j = 0; j < allTables.size(); j++)
+						{
+							if (allTables[j].getTableName() == showTable[i].content)
+							{
+								//then identifer corresponds to a table in allTables. print this table.
+								isTableName = true;
+								allTables[j].printTable(allTables[j]);
+								break;
+							}
+						}
+
+						if (isTableName == false)
+						{
+							//check to see if identifer is a querry
+							
+							if (i + 1 < showTable.size())
+							{
+								vector <Token> tokensVect;
+
+								for (int k = i + 1; k < showTable.size(); k++)
+								{
+									tokensVect.push_back(showTable[k]);
+								}
+
+								if (showTable[i].content == "select")
+								{
+									Table result = parser_select(tokensVect);
+									result.printTable(result);
+									break;
+								}
+								else if (showTable[i].content == "project")
+								{
+									Table result = parser_project(tokensVect);
+									result.printTable(result);
+									break;
+								}
+								else if (showTable[i].content == "rename")
+								{
+									Table result = parser_rename(tokensVect);
+									result.printTable(result);
+									break;
+								}
+								else if (showTable[i].content == "union")
+								{
+									Table result = parser_union(tokensVect);
+									result.printTable(result);
+									break;
+								}
+								else if (showTable[i].content == "difference")
+								{
+									Table result = parser_difference(tokensVect);
+									result.printTable(result);
+									break;
+								}
+								else if (showTable[i].content == "natural")
+								{
+									if (i + 2 < showTable.size())
+									{
+										if (showTable[i + 1].content == "join")
+										{
+											//remove first element from tokensVect
+											tokensVect.erase(tokensVect.begin());
+											Table result = parser_select(tokensVect);
+
+											result.printTable(result);
+											break;
+										}
+									}
+								}
+
+							}
+						}
+
+					}
+					else if (showTable[i].type == number){}
+					else if (showTable[i].type == op){}
+					else if (showTable[i].type == punc){}
+					else if (showTable[i].type == quotes){}
+				}
+
+			}
 		}
-		// else if()
+
 	}
+	
 	return 0;
 }
 
@@ -496,4 +619,83 @@ void parser_CreateTable(vector<Token> cmd)
 	createTable(allTables, attrs, _name);
 	cout << "The following table has been created:" << endl;
 	allTables[allTables.size() - 1].printTable(allTables[allTables.size() - 1]);
+}
+
+
+//parser functions
+Table parser_select(vector <Token> cmd)
+{
+	//BEGIN DUMMY IMPLEMENTATION
+	Attribute dummy("dummy", "string", "primary key");
+	vector <Attribute> attributeList = {dummy};
+	Table result(attributeList, "result");
+	return result;
+
+	//END DUMMY IMPLEMENTATION
+}
+
+Table parser_project(vector <Token> cmd)
+{
+	//BEGIN DUMMY IMPLEMENTATION
+	Attribute dummy("dummy", "string", "primary key");
+	vector <Attribute> attributeList = { dummy };
+	Table result(attributeList, "result");
+	return result;
+
+	//END DUMMY IMPLEMENTATION
+}
+
+Table parser_rename(vector <Token> cmd)
+{
+	//BEGIN DUMMY IMPLEMENTATION
+	Attribute dummy("dummy", "string", "primary key");
+	vector <Attribute> attributeList = { dummy };
+	Table result(attributeList, "result");
+	return result;
+
+	//END DUMMY IMPLEMENTATION
+}
+
+Table parser_union(vector <Token> cmd)
+{
+	//BEGIN DUMMY IMPLEMENTATION
+	Attribute dummy("dummy", "string", "primary key");
+	vector <Attribute> attributeList = { dummy };
+	Table result(attributeList, "result");
+	return result;
+
+	//END DUMMY IMPLEMENTATION
+}
+
+Table parser_difference(vector <Token> cmd)
+{
+	//BEGIN DUMMY IMPLEMENTATION
+	Attribute dummy("dummy", "string", "primary key");
+	vector <Attribute> attributeList = { dummy };
+	Table result(attributeList, "result");
+	return result;
+
+	//END DUMMY IMPLEMENTATION
+}
+
+Table parser_cross_product(vector <Token> cmd)
+{
+	//BEGIN DUMMY IMPLEMENTATION
+	Attribute dummy("dummy", "string", "primary key");
+	vector <Attribute> attributeList = { dummy };
+	Table result(attributeList, "result");
+	return result;
+
+	//END DUMMY IMPLEMENTATION
+}
+
+Table parser_natural_join(vector <Token> cmd)
+{
+	//BEGIN DUMMY IMPLEMENTATION
+	Attribute dummy("dummy", "string", "primary key");
+	vector <Attribute> attributeList = { dummy };
+	Table result(attributeList, "result");
+	return result;
+
+	//END DUMMY IMPLEMENTATION
 }
