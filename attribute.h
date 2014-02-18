@@ -1,36 +1,61 @@
-#ifndef attribute_H
-#define attribute_H
+#include "stdafx.h"
 
-#include <string>
-#include <vector>
+#include <stdio.h>
+#include <tchar.h>
+#include "attribute.h"
+#include <iostream>
 
-using namespace std;
 
-class Attribute{
-private:
-	string name;		//stores value
-	string type;		//type = int, string, double, char...
-	string keyType;		//keyType = primary key, foreign key, or attr
+Attribute::Attribute(string _name, string _type){
 
-public:
+	name = _name;
+	type = _type;
 
-	Attribute(string _name, string _type);
-	Attribute(string _name, string _type, string _keyType);
-	
-	//Print
-	void printAttribute(Attribute _att);
+	keyType = "attribute"; //keyType set to "attribute" if attribute isn't primary or foreign key
+}
 
-	//Modifiers
-	void setName(string _name);
-	void setPrimaryKey();
-	void setForeignKey();
+Attribute::Attribute(string _name, string _type, string _keyType)
+{
+	name = _name;
+	type = _type;
 
-	//Accessors
-	string getKeyType();
-	string getName();
-	string getType();
-};
+	keyType = _keyType;
+}
 
-#endif
+void Attribute::printAttribute(Attribute _att){
+	cout << _att.name;
 
-//hello
+}
+
+//************************************************ MODIFIERS **************************************************************
+void Attribute::setName(string _name)
+{
+	name = _name;
+}
+
+void Attribute::setPrimaryKey()
+{
+	keyType = "primary key";
+}
+
+void Attribute::setForeignKey()
+{
+	keyType = "foreign key";
+}
+
+
+//********************************************** ACCESSORS *****************************************************************
+string Attribute::getKeyType()
+{
+	return keyType;
+}
+
+string Attribute::getName()
+{
+	return name;
+}
+
+string Attribute::getType()
+{
+	return type;
+}

@@ -1,4 +1,7 @@
 #include "stdafx.h"
+
+#include <stdio.h>
+#include <tchar.h>
 #include "Table.h"
 #include <stdio.h>
 #include <iostream>
@@ -25,6 +28,7 @@ void Table::pushBackRow(vector<string> _newRow)
 }
 
 //***************************************************** ACCESSORS **********************************************************
+
 string Table::getTableName()
 {
 	return name;
@@ -38,6 +42,20 @@ int Table::getNumRows()
 int Table::getNumAttrs()
 {
 	return attributes.size();
+}
+
+string Table::getPrimaryKey(int rowLoc)
+{
+	//IF TABLE HAS MULTIPLE PRIMARY KEYS THIS APPENDS THE KEYS
+	string primaryKey = "";
+	for (int x = 0; x < getNumAttrs(); x++)
+	{
+		if (attributes[x].getKeyType() == "primary key")
+		{
+			primaryKey += rows[rowLoc][x];
+		}
+	}
+	return primaryKey;
 }
 
 string Table::attrNameAt(int loc)
@@ -55,12 +73,40 @@ string Table::attrKeyAt(int loc)
 	return attributes[loc].getKeyType();
 }
 
+string Table::attrTypeAt(int loc)
+{
+	return attributes[loc].getType();
+}
+
+vector<string> Table::getRow(int loc)
+{
+	return rows[loc];
+}
+
+vector<vector<string>> Table::getRows()
+{
+	return rows;
+}
 //**************************************************** MODIFIERS ***********************************************************
 void Table::setAttrNameAt(int loc, string _newname)
 {
 	attributes[loc].setName(_newname);
 }
 
+void Table::updateVal(int rowLoc, int attrLoc, string newValue)
+{
+	rows[rowLoc][attrLoc] = newValue;
+}
+
+void Table::deleteRowAtLoc(int rowloc)
+{
+	rows.erase(rows.begin() + rowloc);
+}
+
+void Table::setName(string _name)
+{
+	name;
+}
 //**************************************************** PRINT FUNCTIONS *****************************************************
 void Table::printTable(Table _table){
 
@@ -97,5 +143,14 @@ void Table::printAttVec(Table _table){
 		att[x].printAttribute(att[x]);
 		cout << "     ";
 	}
+
+}
+
+Table& Table::operator=(Table& table){
+
+	Table newTable(table.attributes, table.name);
+	newTable.rows = table.rows;
+
+	return newTable;
 
 }
