@@ -94,7 +94,7 @@ int main()
 	
 	string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
 	string testString2 = "SHOW (animals JOIN animals) + animals;";
-	string testString3 = "result <- select (userName != \"Bobby\" && userID > 0) (tableA + tableB);";
+	string testString3 = "result <- select (userName != \"Bobby\" && userID > 0) (select (userID > 1) tableB + tableA);";
 
 	vector <string> testStrings = {testString, testString3};
 
@@ -119,6 +119,7 @@ int main()
 					cout << endl;
 				}
 				Table result = parser_select(select);
+				cout << "test" << endl;
 			}
 		}
 		else
@@ -1147,6 +1148,7 @@ Table atomicExpResolver(vector<Token> tokenList)
 						{
 							//token is a table
 							table2_index = i;
+							tableB = allTables[i];
 							isTable = true;
 							break;
 						}
@@ -1158,19 +1160,19 @@ Table atomicExpResolver(vector<Token> tokenList)
 						if (tokenList[currentToken + 1].content == "+")
 						{
 							//compute union of currentToken and currentToken + 2
-							Table result = setUnion(allTables[table1_index], allTables[table2_index]);
+							Table result = setUnion(tableA, tableB);
 							return result;
 						}
 						else if (tokenList[currentToken + 1].content == "-")
 						{
 							//compute difference of currentToken and currentToken + 2
-							Table result = setDifference(allTables[table1_index], allTables[table2_index]);
+							Table result = setDifference(tableA, tableB);
 							return result;
 						}
 						else if (tokenList[currentToken + 1].content == "*")
 						{
 							//compute cross product of currentToken and currentToken + 2
-							Table result = crossProduct(allTables[table1_index], allTables[table2_index]);
+							Table result = crossProduct(tableA, tableB);
 							return result;
 
 						}
