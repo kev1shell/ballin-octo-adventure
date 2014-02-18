@@ -1480,142 +1480,12 @@ void paser_updateValue(vector<Token> cmd)
 
 Table parser_product(vector <Token> cmd)
 {
-	if (cmd[0].content == "(")
+	vector<Token> atomichelp;
+	for (int x = 0; x < cmd.size()-1; x++)
 	{
-		if (cmd[1].type == identifier)
-		{
-			int table1Loc, table2Loc;
-			bool found = false;
-			for (int x = 0; x < allTables.size(); x++)
-			{
-				if (cmd[1].content == allTables[x].getTableName())
-				{
-					found = true;
-					table1Loc = x;
-					break;
-				}
-			}
-			if (!found)
-			{
-				cout << "ERROR: Cross Product parser first table not found. Dummy table returned." << endl;
-				Attribute a("dummmy", "int");
-				vector <Attribute> aaa;
-				Table dummy(aaa, "dummy");
-				return dummy;
-			}
-			if (cmd[3].type == identifier) //skip over "*"
-			{
-				bool found2 = false;
-				for (int x = 0; x < allTables.size(); x++)
-				{
-					if (cmd[3].content == allTables[x].getTableName())
-					{
-						found2 = true;
-						table2Loc = x; 
-						break;
-					}
-				}
-				if (!found2)
-				{
-					cout << "ERROR: Cross Product parser second table not found. Dummy table returned." << endl;
-					Attribute a("dummmy", "int");
-					vector <Attribute> aaa;
-					Table dummy(aaa, "dummy");
-					return dummy;
-				}
-				return crossProduct(allTables[table1Loc], allTables[table2Loc]);
-			}
-			else if (cmd[3].content == "(")
-			{
-				//recursion handler
-			}
-			else
-			{
-				cout << "ERROR: Cross Product expected identifier or \"(\". Dummy table returned" << endl;
-				Attribute a("dummmy", "int");
-				vector <Attribute> aaa;
-				Table dummy(aaa, "dummy");
-				return dummy;
-			}
-		}
-		else if (cmd[1].content == "(")
-		{
-			//recursion handler
-		}
-		else
-		{
-			cout << "ERROR: Cross product identifier expected after \"(\". Dummy table returned " << endl;
-			Attribute a("dummmy", "int");
-			vector <Attribute> aaa;
-			Table dummy(aaa, "dummy");
-			return dummy;
-		}
+		atomichelp.push_back(cmd[x]);
 	}
-	else if (cmd[0].type == identifier)
-	{
-		bool found = false;
-		int table1Loc, table2loc;
-		for (int x = 0; x < allTables.size(); x++)
-		{
-			if (cmd[0].content == allTables[x].getTableName())
-			{
-				table1Loc = x;
-				found = true;
-				break;
-			}
-		}
-		if (!found)
-		{
-			cout << "ERROR: Cross Product parser first table not found. Dummy table returned." << endl;
-			Attribute a("dummmy", "int");
-			vector <Attribute> aaa;
-			Table dummy(aaa, "dummy");
-			return dummy;
-		}
-		if (cmd[2].type == identifier) //skip over "*" and look at next token
-		{
-			bool foundt2 = false;
-			for (int x = 0; x < allTables.size(); x++)
-			{
-				if (cmd[2].content == allTables[x].getTableName())
-				{
-					table2loc = x;
-					foundt2 = true;
-					break;
-				}
-			}
-			if (!foundt2)
-			{
-				cout << "ERROR: Cross Product parser second table not found. Dummy table returned." << endl;
-				Attribute a("dummmy", "int");
-				vector <Attribute> aaa;
-				Table dummy(aaa, "dummy");
-				return dummy;
-			}
-			return crossProduct(allTables[table1Loc], allTables[table2loc]);
-		}
-		else if (cmd[2].content == "(")
-		{
-			//go to recursion handler
-		}
-		else
-		{
-			cout << "ERROR: Cross Product. expected \"(\" or table name. Dummy table returned;" << endl;
-			Attribute a("test", "int");
-			vector <Attribute> aaa;
-			Table dummy(aaa, "dummy");
-			return dummy;
-		}
-		
-	}
-	else
-	{
-		cout << "ERROR: Cross Product invalid entry into parser function. First entry either needs to be \"(\" or an identifier. Dummy Table returned." << endl;
-		Attribute a("test", "int");
-		vector <Attribute> aaa;
-		Table dummy(aaa, "dummy");
-		return dummy;
-	}
+	return atomicExpResolver(atomichelp);
 }
 
 Table parser_rename(vector <Token> cmd)
@@ -1657,52 +1527,28 @@ Table parser_rename(vector <Token> cmd)
 			openparenthesiscount = 1;
 			closedparenthesiscount = 0;
 			positionInInput++;
-			while (openparenthesiscount != closedparenthesiscount)
+			vector<Token> atomichelp;
+			for (int x = positionInInput; x < cmd.size(); x++)
 			{
-				if (cmd[positionInInput].content == "(")
+				if (cmd[x].content == "(")
 				{
 					openparenthesiscount++;
-					positionInInput++;
 				}
-				else if (cmd[positionInInput].content == ")")
+				else if (cmd[x].content == ")")
 				{
 					closedparenthesiscount++;
-					positionInInput++;
 				}
-				else if (cmd[positionInInput].content == ";")
-				{
+
+				if (closedparenthesiscount == openparenthesiscount)
 					break;
-				}
-				else if (cmd[positionInInput].content == "select")
-				{
 
-				}
-				else if (cmd[positionInInput].content == "project")
-				{
-
-				}
-				else if (cmd[positionInInput].content == "union")
-				{
-
-				}
-				else if (cmd[positionInInput].content == "difference")
-				{
-
-				}
-				else if (cmd[positionInInput].content == "product")
-				{
-
-				}
-				else if (cmd[positionInInput].content == "naturaljoin")//idk what this is called CHANGE **************************************************
-				{
-
-				}
-				else if (cmd[positionInInput].type == identifier)
-				{
+				atomichelp.push_back(cmd[x]);
+			}
+			Table tabel = atomicExpResolver(atomichelp);
 					bool found = false;
 					for (int x = 0; x < allTables.size(); x++)
 					{
-						if (allTables[x].getTableName() == cmd[positionInInput].content)
+						if (allTables[x].getTableName() == tabel.getTableName())
 						{
 							found = true;
 							tableloc = x;
@@ -1727,8 +1573,6 @@ Table parser_rename(vector <Token> cmd)
 						returnTable.setAttrNameAt(x, newnames[x]);
 					}
 					return returnTable;
-				}
-			}
 		}
 	}
 	else
