@@ -33,6 +33,11 @@ void Attribute::setName(string _name)
 	name = _name;
 }
 
+void Attribute::setType(string _type)
+{
+	type = _type;
+}
+
 void Attribute::setPrimaryKey()
 {
 	keyType = "primary key";

@@ -4,11 +4,11 @@
 #include "stdafx.h"
 #include "dbmsFunctions.h"
 
-using namespace dbmsFunctions;
+//using namespace dbmsFunctions;
 
 int main(int argc, _TCHAR* argv[])
 {
-	Attribute user_id("user_id", "int");
+	/*Attribute user_id("user_id", "int");
 	Attribute user_name("user_name", "string");
 	Attribute privilege_level("privilege_level", "string");
 
@@ -27,9 +27,9 @@ int main(int argc, _TCHAR* argv[])
 	tableA.pushBackRow(newer);
 
 	tableB.pushBackRow(newRow2);
-	tableB.pushBackRow(newer2);
+	tableB.pushBackRow(newer2);*/
 
-	Table result = select(tableB, user_id, "4", '<');
+	//Table result = select(tableB, user_id, "4", '<');
 
 
 

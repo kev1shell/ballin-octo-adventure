@@ -19,6 +19,7 @@ public:
 
 	//Modifiers
 	void setName(string _name);
+	void setType(string _type);
 	void setPrimaryKey();
 	void setForeignKey();
 

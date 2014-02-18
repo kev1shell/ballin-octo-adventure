@@ -14,6 +14,7 @@ public:
 	vector<vector<string>> rows;
 	string name;
 	Table(vector<Attribute> _attributes, string NAME);
+	Table(){}
 
 	//insert a new row onto end of the table
 	void pushBackRow(vector<string> _newRow);
@@ -27,12 +28,15 @@ public:
 	string attrNameAt(int loc);
 	string attrKeyAt(int loc);
 	string attrTypeAt(int loc);
+	vector<string> getRow(int loc);
 	vector<vector<string>> getRows();
+	vector<Attribute> getAttributes();
 
 	//Modifiers
 	void setAttrNameAt(int loc, string _newname);
 	void updateVal(int rowLoc, int attrLoc, string newValue);
 	void deleteRowAtLoc(int rowloc);
+	void setName(string _name);
 
 	//Prints
 	void printTable(Table _table);

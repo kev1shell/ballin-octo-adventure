@@ -1,0 +1,22 @@
+HOW THE PARSER WILL WORK:
+
+1. Take in input line & store as string
+2. Parse input line in main() & Determine whether command or query
+3. Tokenize input line. tokenizer() returns vector of tokens = Each input character or group of characters (variable names aka identifiers) will become a token and be stored as a vector. Spaces will be ignored. A token knows its type.
+4. Store vector <Token> returned by tokenizer and use as input to parserFunctions(vector <Token> TOKENS);
+5. In parserFunction(), parse vector of tokens finding literals, identifiers, ops, etc.
+	
+	NOTE: A Token DOES NOT know if it is part of a keyword. All names are stored as "identifiers"
+		So within your parserFunction(), make sure to utilize substr to go thru and check if these "identifiers" are keywords. 
+	
+6. Store appropriate information from parsing vector of tokens
+7. Call dbmsFunction() with appropriate info
+8. Return/Print/Display actions completed.
+
+LOOK AT CREATE TABLE FUNCTIONS AS A REFERENCE. I MADE SURE TO COMMENT IT TO MAKE IT AS CLEAR AS I COULD.
+
+REMEMBER PRIMARY KEYS
+
+TRY TO IMPLEMENT EACH ONE OF THE FUNCTIONS W/O RECURSION. OR INCLUDE IT IF YOU CAN I MADE A SUGGESTION FOR THE RECURSION AND HAVE UPLOADED THAT AS WELL.
+
+ASK ME IF YOU HAVE ANY QUESTIONS ON HOW TO IMPLEMENT YOUR FUNCTIONS USING THIS AS THE PARSER METHOD OR SUGGEST CHANGES BUT THAT'D BE HARD TO DO BECAUSE I GOT THIS WORKING UNLESS OF COURSE MINOR CHANGES.
