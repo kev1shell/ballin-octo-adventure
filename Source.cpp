@@ -79,7 +79,7 @@ int main()
 	vector<string> newer = { "1", "Will", "guest" };
 
 	vector<string> newRow2 = { "3", "Bobby", "admin" };
-	vector<string> newer2 = { "1", "Will", "guest" };
+	vector<string> newer2 = { "2", "Will", "guest" };
 
 	tablea.pushBackRow(newRow);
 	tablea.pushBackRow(newer);
@@ -94,7 +94,7 @@ int main()
 	
 	string testString = "CREATE TABLE animals (name VARCHAR(20), kind VARCHAR(8), years INTEGER) PRIMARY KEY (name, kind);";
 	string testString2 = "SHOW (animals JOIN animals) + animals;";
-	string testString3 = "result <- select (userID > 0) tableA;";
+	string testString3 = "result <- select (userName != \"Bobby\" && userID > 0) (tableA + tableB);";
 
 	vector <string> testStrings = {testString, testString3};
 
@@ -1009,8 +1009,8 @@ Table atomicExpResolver(vector<Token> tokenList)
 				else
 				{
 					//this was the only token provided to the function
-					Table tableA(table1->getAttributes(), table1->getTableName());
-					return tableA;
+					Table result = allTables[table1_index];
+					return result;
 				}
 			}
 			else if (tokenList[currentToken].content == "select") //if first token is an identifier but not a table;
@@ -1858,9 +1858,10 @@ Table parser_select(vector <Token> cmd)
 {
 	int tokenIndex = 0;
 
-	Attribute dummy("dummy", "string");
-	vector<Attribute> attributeList = { dummy };
-	Table table(attributeList, "result");
+	Table table;
+	Table result;
+	Table temp1;
+	Table temp2;
 
 	vector<Token> conditionTokenList;
 
@@ -1902,7 +1903,7 @@ Table parser_select(vector <Token> cmd)
 		else
 		{
 			vector<Token> newTokenList;
-			for (int i = tokenIndex + 1; i < cmd.size() && i < lastClosedParenIndex; i++)
+			for (int i = tokenIndex + 2; i < cmd.size() && i < lastClosedParenIndex; i++)
 			{
 				newTokenList.push_back(cmd[i]);
 			}
@@ -1916,15 +1917,109 @@ Table parser_select(vector <Token> cmd)
 	}
 
 	//iterate through conditionTokenList
+	string boolOp = "";
+	bool leftHasQuotes = false;
 	for (int currentToken = 0; currentToken < conditionTokenList.size(); currentToken++)
 	{
-		if (conditionTokenList[currentToken].type == identifier)
+		if (conditionTokenList.size() > currentToken + 2 && conditionTokenList[currentToken].type == identifier &&
+			conditionTokenList[currentToken + 1].type == op && conditionTokenList[currentToken + 2].type == op ||
+			conditionTokenList[currentToken + 2].type == identifier || conditionTokenList[currentToken + 2].type == number ||
+			conditionTokenList[currentToken + 2].type == quotes)
 		{
-			//if (conditionTokenList[currentToken].type == identifier)
+			string leftOperand = conditionTokenList[currentToken].content;
+			string operation = "";
+			string rightOperand = "";
+
+			if (conditionTokenList.size() > currentToken + 3 && conditionTokenList[currentToken + 3].type == quotes)
+			{
+				leftHasQuotes = true;
+				if (conditionTokenList.size() > currentToken + 4)
+				{
+					rightOperand = conditionTokenList[currentToken + 4].content;
+				}
+			}
+			if (conditionTokenList[currentToken + 1].content == "=")
+			{
+				operation = "==";
+				if (rightOperand == "")
+				{
+					rightOperand = conditionTokenList[currentToken + 3].content;
+				}
+				currentToken = currentToken + 3;
+			}
+			else if (conditionTokenList[currentToken + 1].content == "!")
+			{
+				operation = "!=";
+				if (rightOperand == "")
+				{
+					rightOperand = conditionTokenList[currentToken + 3].content;
+				}
+				currentToken = currentToken + 3;
+			}
+			else if (conditionTokenList[currentToken + 1].content == "<")
+			{
+				if (conditionTokenList[currentToken + 2].content == "=")
+				{
+					operation = "<=";
+					rightOperand = conditionTokenList[currentToken + 3].content;
+					currentToken = currentToken + 3;
+				}
+				else
+				{
+					operation = "<";
+					rightOperand = conditionTokenList[currentToken + 2].content;
+					currentToken = currentToken + 2;
+				}
+			}
+			else if (conditionTokenList[currentToken + 1].content == ">")
+			{
+				if (conditionTokenList[currentToken + 2].content == "=")
+				{
+					operation = ">=";
+					rightOperand = conditionTokenList[currentToken + 3].content;
+					currentToken = currentToken + 3;
+				}
+				else
+				{
+					operation = ">";
+					rightOperand = conditionTokenList[currentToken + 2].content;
+					currentToken = currentToken + 2;
+				}
+			}
+			if (boolOp == "")
+			{
+				result = select(table, leftOperand, operation, rightOperand);
+			}
+			else
+			{
+				temp1 = select(table, leftOperand, operation, rightOperand);
+
+				if (boolOp == "&&")
+				{
+					result = intersection(result, temp1);
+					boolOp = "";
+				}
+				else
+				{
+					result = setUnion(result, temp1);
+					boolOp = "";
+				}
+			}
+		}
+		if (leftHasQuotes)
+		{
+			currentToken += 2;
+			leftHasQuotes = false;
+		}
+		if (currentToken + 2 < conditionTokenList.size())
+		{
+			//boolean condition exists
+			boolOp = conditionTokenList[currentToken + 1].content + conditionTokenList[currentToken + 2].content;
+			currentToken += 2;
 		}
 	}
 
-
+	return result;
 
 }
 

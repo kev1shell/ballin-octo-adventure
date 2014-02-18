@@ -14,6 +14,7 @@ public:
 	vector<vector<string>> rows;
 	string name;
 	Table(vector<Attribute> _attributes, string NAME);
+	Table(){}
 
 	//insert a new row onto end of the table
 	void pushBackRow(vector<string> _newRow);
