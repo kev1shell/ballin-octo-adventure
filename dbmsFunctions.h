@@ -5,25 +5,26 @@
 
 using namespace std;
 
+//all of our lowest level functions that operate directly on tables are contained in this namespace
 namespace dbmsFunctions{
+	//This Boolean Value is used to control the testing process 
+	bool testing = false;
 
-	bool testing = true;
-
-
+	//This function takes in an integer value and returns a string containing the same number
 	string int2string(int number) {
 		stringstream ss;//create a stringstream
 		ss << number;//add number to the stream
 		return ss.str();//return a string with the contents of the stream
 	}
 
-	
+	//This function takes in 2 tables, and then returns a table containing the union of these 2 tables (if there attribute lists match)
 	Table setUnion(Table& tableA, Table& tableB){
-		
+
 		Table result(tableA.attributes, "setUnion of " + tableA.name + tableB.name);
 
 		Table* longTable;
 		Table* shortTable;
-		
+
 		//ensure both tables have equal number of attributes
 		if (tableA.attributes.size() != tableB.attributes.size()){
 			cout << "Set Union Failed: attribute mismatch" << endl;
@@ -46,18 +47,18 @@ namespace dbmsFunctions{
 		}
 
 		for (int i = 0; i < longTable->rows.size(); i++){
-			
+
 			result.pushBackRow(longTable->rows[i]);
-		
+
 		}
-		
-		
+
+
 		for (int i = 0; i < shortTable->rows.size(); i++){
-			
+
 			vector<string> currentRow = shortTable->rows[i];
 
 			if (result.rows.size() == 0){
-				
+
 				result.rows.push_back(currentRow);
 				continue;
 			}
@@ -68,13 +69,13 @@ namespace dbmsFunctions{
 				int numAttributes = currentRow.size();
 
 				for (int col = 0; col < currentRow.size(); col++){
-					
+
 					if (currentRow[col] == result.rows[row][col]){
-						
+
 						similarAttributes++;
-						
+
 						if (similarAttributes == numAttributes){
-							
+
 							col = currentRow.size();
 							row = result.rows.size();
 							continue;
@@ -88,21 +89,41 @@ namespace dbmsFunctions{
 					continue;
 				}
 			}
-			
+
 		}
 
 		return result;
-		
+
 	}
 
+	Table findTable(vector<Table> allTables, string _name){
+		Table dummy; 
+		bool tabFound = false;
+		int index;
+		for (int i = 0; i < allTables.size(); i++)
+		{
+			if (allTables[i].getTableName() == _name)
+			{
+				//token is a table
+				index = i;
+				tabFound = true;
+				break;
+			}
+		}
+		if (tabFound = true){
+			return allTables[index];
+		}
+		else return dummy;
+	}
 
+	//This function takes in 2 tables, and an attribute that they share, it returns a table containing the natural join of these tables
 	Table naturalJoin(Table& tableA, Table& tableB, Attribute attribute){
 
 		vector<Attribute> attributeList;
 
 		Attribute NJkey("NJID", "int", "primary key");	//this will be the key of the resulting table
 
-		attributeList.push_back(NJkey);	
+		attributeList.push_back(NJkey);
 		attributeList.push_back(attribute);
 
 		int atrbIndexA = 0;
@@ -110,7 +131,7 @@ namespace dbmsFunctions{
 
 		//add attributes of tableA and tableB to result table
 		for (int i = 0; i < tableA.attributes.size(); i++){
-			
+
 			if (tableA.attributes[i].name != attribute.name){
 				attributeList.push_back(tableA.attributes[i]);
 			}
@@ -166,96 +187,57 @@ namespace dbmsFunctions{
 			}
 
 		}
-		
+
 		return result;
 	}
 
-
-	//print out every possible combination of rows in table 1 with rows in table 2.
-	void crossProduct(Table _table1, Table _table2)
-	{
-		std::cout << "Cross Product Function will print all possible combinations of rows in first column"
-			<< " with rows in second column." << endl << endl;
-		for (int x = 0; x < _table1.getNumRows(); x++)
-		{
-			vector <string> table1RowPrimaryKeys; //stores primary key values for row 
-			vector <string> table1RowPKnames; //stores primary key names for table 1
-
-			for (int z = 0; z < _table1.getNumAttrs(); z++)
-			{
-				if (_table1.attrKeyAt(z) == "primary key")
-				{
-					table1RowPrimaryKeys.push_back(_table1.getRowAttr(x, z));
-					table1RowPKnames.push_back(_table1.attrNameAt(z));
-				}
-			}
-
-			for (int y = 0; y < _table2.getNumRows(); y++)
-			{
-				//print Table 1 name and primary keys || table 2 name and primary keys of the specific row we are in right now
-
-				vector <string> table2RowPrimaryKEys; //stores primary key values for row
-				vector <string> table2RowsPKnames; //stores primary key names for table 2
-				for (int a = 0; a < _table2.getNumAttrs(); a++)
-				{
-					if (_table2.attrKeyAt(a) == "primary key");
-					{
-						table2RowPrimaryKEys.push_back(_table2.getRowAttr(y, a));
-						table2RowsPKnames.push_back(_table2.attrNameAt(a));
-					}
-				}
-
-				std::cout << _table1.getTableName() << ": ";
-				for (int b = 0; b < table1RowPKnames.size(); b++)
-				{
-					std::cout << table1RowPKnames[b] << " = " << table1RowPrimaryKeys[b];
-				}
-
-				std::cout << endl << "	" << _table2.getTableName();
-
-				for (int c = 0; c < table2RowPrimaryKEys.size(); c++)
-				{
-					std::cout << ": " << table2RowsPKnames[c] << " = " << table2RowPrimaryKEys[c] << " ";
-				}
-				cout << endl;
-			}
-		}
-	}
-
-
-	// print the same attribute from every row of a table
-	void projection(Table _table, string _attrName){
-		int desired;
+	// This function takes in a table and a vector of desired attributes, it then returns a table containing every value associated 
+	//with these attributes from the original table
+	Table projection(Table _table, vector<Attribute> _attrVec){
+		Table result(_attrVec, "projection from " + _table.name);
+		vector<int> desired;
 		bool match = false;
 		vector<vector<string>> rowList;
 		vector<Attribute> atts;
 		vector<string> names;
+		vector<string> _attrVecName;
+		vector<string> currentRow;
 		atts = _table.attributes;
 		rowList = _table.rows;
 		int numRows = rowList.size();
 		int attSize = atts.size();
+		for (int nameIt = 0; nameIt < _attrVec.size(); nameIt++){
+			_attrVecName.push_back(_attrVec[nameIt].name);
+		}
 		for (int x = 0; x < attSize; x++){
 			names.push_back(atts[x].name);
 		}
-		for (int y = 0; y < attSize; y++){
-			if (_attrName == names[y]){
-				desired = y;
-				match = true;
+		for (int attIt = 0; attIt < _attrVecName.size(); attIt++){
+			for (int y = 0; y < attSize; y++){
+				if (_attrVecName[attIt] == names[y]){
+					desired.push_back(y);
+					match = true;
+				}
 			}
 		}
 		if (match = true){
-			cout << "desired attribute: " << _attrName << endl;
 			for (int z = 0; z < numRows; z++){
-				cout << rowList[z][desired] << endl;
+				for (int iter = 0; iter < desired.size(); iter++){
+					currentRow.push_back(rowList[z][desired[iter]]);
+				}
+				result.pushBackRow(currentRow);
+				currentRow.clear();
 			}
 		}
 		else cout << "desired attribute not in table" << endl;
+		return result;
 
 	}
 
 
-	// What does table 1 hold, that table 2 is missing
-	void setDifference(Table _tab1, Table _tab2){
+	// this function takes in 2 tables and returns a table holding all the values that table 1 has and table 2 doesnt
+	Table setDifference(Table _tab1, Table _tab2){
+		Table result(_tab1.attributes, "set difference of " + _tab1.name + _tab2.name);
 		bool match = true;
 		bool rowMatch = false;
 		int numAtt = _tab1.attributes.size();
@@ -264,8 +246,6 @@ namespace dbmsFunctions{
 		int numRow2 = _tab2.rows.size();
 		vector<vector<string>> RowN = _tab1.rows;
 		vector<vector<string>> RowN2 = _tab2.rows;
-		vector<vector<string>> out;
-		vector<string> temp;
 		int outSize;
 		int rowSize;
 		int tempSize;
@@ -277,23 +257,14 @@ namespace dbmsFunctions{
 				}
 			}
 			if (rowMatch == false){
-				out.push_back(RowN[r]);
+				result.pushBackRow(RowN[r]);
 			}
 		}
-		outSize = out.size();
-		cout << "Set Difference between: " << _tab1.name << " & " << _tab2.name << endl;
-		for (int p = 0; p < outSize; p++){
-			temp = out[p];
-			tempSize = temp.size();
-			for (int h = 0; h < tempSize; h++){
-				cout << temp[h] << "     ";
-			}
-			cout << endl;
-		}
+		return result;
 	}
 
-
-	void renameAttr(Table &_table, Attribute _attr, string _newName)
+	// this function takes in a table, and a list of attributes, it returns a table with the attribute list changed to match the input
+	Table renameAttr(Table _table, Attribute _attr, string _newName)
 	{
 		bool found = false;
 		for (int x = 0; x < _table.getNumAttrs(); x++)
@@ -307,16 +278,18 @@ namespace dbmsFunctions{
 		if (!found)
 		{
 			std::cout << "Attribute was not found in renameAttr() function." << endl;
+			return _table;
 		}
 		else if (testing)
 		{
 			std::cout << "Successfully changed name of attribute." << endl;
 		}
+		return _table;
 	}
 
 
 	//create table function in the list of operating functions 
-	vector<Table> createTable(vector<Table> _tablist, vector<Attribute> _attr, string _name){
+	vector<Table> createTable(vector<Table> &_tablist, vector<Attribute> _attr, string _name){
 		Table newTab(_attr, _name);
 		_tablist.push_back(newTab);
 		return _tablist;
@@ -350,81 +323,211 @@ namespace dbmsFunctions{
 		}
 	}
 
-	Table select(Table table, Attribute attribute, string findthis, char opp)
-	{
-		Table result(table.attributes, "selectResult");
-
-		//find which attribute of table is the condition attribute
-		int attributeIndex = 0;
+	 
+	//It returns a table containing all rows that satisfy the input condition
+	Table select(Table table, string operand1, string operation, string operand2){
 		
-		for (int i = 0; i < table.attributes.size(); i++){
-			if (table.attributes[i].getName() == attribute.getName()){
-				attributeIndex = i;
+		Table result(table.getAttributes(), "SelectedFrom" + table.getTableName());
+
+		Attribute attTemp1("", "");
+		Attribute attTemp2("", "");
+
+		Attribute* attribute1 = NULL;
+		Attribute* attribute2 = NULL;
+
+		string literal = "";
+
+		int att1Index = 0;
+		int att2Index = 0;
+
+		for (int i = 0; i < table.getAttributes().size(); i++)
+		{
+			if (attribute1 == NULL && table.getAttributes()[i].getName() == operand1)
+			{
+				attTemp1.setName(table.getAttributes()[i].getName());
+				attTemp1.setType(table.getAttributes()[i].getType());
+				attribute1 = &attTemp1;
+				att1Index = i;
+			}
+			else if (attribute2 == NULL && table.getAttributes()[i].getName() == operand2)
+			{
+				attTemp2.setName(table.getAttributes()[i].getName());
+				attTemp2.setType(table.getAttributes()[i].getType());
+				attribute2 = &attTemp1;
+				att2Index = i;
+			}
+
+			if (attribute1 != NULL && attribute2 != NULL)
+			{
+				break;
 			}
 		}
-		//never take 449
-		//determin which type of select todo
-		if (opp == '='){
-			for (int i = 0; i < table.getNumRows(); i++){
-				
-				vector<string> currentRow = table.getRows()[i];
 
-				if (currentRow[attributeIndex] == findthis){
-					
-					result.pushBackRow(currentRow);
+		if (attribute1 == NULL && attribute2 == NULL)
+		{
+			return result;
+		}
 
+		if (attribute2 == NULL)
+		{
+			literal = operand2;
+		}
+		else if (attribute1 == NULL)
+		{
+			literal = operand1;
+		}
+
+		for (int i = 0; i < table.getRows().size(); i++)
+		{
+			if (attribute1 != NULL && attribute2 != NULL)
+			{
+				if (operation == "==")
+				{
+					if (table.getRows()[i][att1Index] == table.getRows()[i][att2Index])
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
 				}
-			}
-		}
-		else if (opp == '!'){
-			for (int i = 0; i < table.getNumRows(); i++){
-
-				vector<string> currentRow = table.getRows()[i];
-
-				if (currentRow[attributeIndex] != findthis){					
-					result.pushBackRow(currentRow);				
+				else if (operation == "!=")
+				{
+					if (table.getRows()[i][att1Index] != table.getRows()[i][att2Index])
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
 				}
-
-			}
-		}
-		else if (opp == '>'){
-			
-			if (attribute.getType() == "int"){
-				
-				int target = atoi(findthis.c_str());
-
-				for (int i = 0; i < table.getNumRows(); i++){
-
-					vector<string> currentRow = table.getRows()[i];
-
-					int data = atoi(currentRow[attributeIndex].c_str());
-					
-					if (data > target){
-						result.pushBackRow(currentRow);
+				else if (attribute1->getType() == "int" && attribute2->getType() == "int")
+				{
+					if (operation == "<=")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) <= atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">=")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) >= atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == "<")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) < atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) > atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
 					}
 				}
 			}
-
-		}
-		else if (opp == '<'){
-			if (attribute.getType() == "int"){
-
-				int target = atoi(findthis.c_str());
-
-				for (int i = 0; i < table.getNumRows(); i++){
-
-					vector<string> currentRow = table.getRows()[i];
-
-					int data = atoi(currentRow[attributeIndex].c_str());
-
-					if (data < target){
-						result.pushBackRow(currentRow);
+			else if (attribute1 != NULL)
+			{
+				if (operation == "==")
+				{
+					if (table.getRows()[i][att1Index] == literal)
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (operation == "!=")
+				{
+					if (table.getRows()[i][att1Index] != literal)
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (attribute1->getType() == "int")
+				{
+					if (operation == "<=")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) <= atoi(literal.c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">=")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) >= atoi(literal.c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == "<")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) < atoi(literal.c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">")
+					{
+						if (atoi(table.getRows()[i][att1Index].c_str()) > atoi(literal.c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+				}
+			}
+			else if (attribute2 != NULL)
+			{
+				if (operation == "==")
+				{
+					if (literal == table.getRows()[i][att2Index])
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (operation == "!=")
+				{
+					if (literal != table.getRows()[i][att2Index])
+					{
+						result.pushBackRow(table.getRows()[i]);
+					}
+				}
+				else if (attribute2->getType() == "int")
+				{
+					if (operation == "<=")
+					{
+						if (atoi(literal.c_str()) <= atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">=")
+					{
+						if (atoi(literal.c_str()) >= atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == "<")
+					{
+						if (atoi(literal.c_str()) < atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
+					}
+					else if (operation == ">")
+					{
+						if (atoi(literal.c_str()) > atoi(table.getRows()[i][att2Index].c_str()))
+						{
+							result.pushBackRow(table.getRows()[i]);
+						}
 					}
 				}
 			}
 		}
+
 		return result;
 	}
+	
 
 	//udates a value in a single cell in a table
 	void updateValue(Table &_table, string rowPrimaryKey, Attribute _attr, string newValue)
@@ -474,4 +577,86 @@ namespace dbmsFunctions{
 		_table.deleteRowAtLoc(rowloc);
 	}
 
+	//return table of every possible combination of rows in table 1 with rows in table 2.
+	Table crossProduct(Table _table1, Table _table2)
+	{
+		std::cout << "Cross Product Function will print all possible combinations of rows in first column"
+			<< " with rows in second column." << endl << endl;
+		vector <Attribute> resultAttrs; //stores attributes of resultant table.
+		for (int x = 0; x < _table1.getNumAttrs(); x++)
+		{
+			Attribute addthis(_table1.attrNameAt(x), _table1.attrTypeAt(x), _table1.attrKeyAt(x));
+			resultAttrs.push_back(addthis);
+		}
+		for (int x = 0; x < _table2.getNumAttrs(); x++)
+		{
+			Attribute addthis(_table2.attrNameAt(x), _table2.attrTypeAt(x), _table2.attrKeyAt(x));
+			resultAttrs.push_back(addthis);
+		}
+
+		Table returnTable(resultAttrs, "returnTable"); //table to be returned after populated
+
+		//populate returnTable
+		for (int x = 0; x < _table1.getNumRows(); x++) //go thru each row in table 1.
+		{
+			for (int z = 0; z < _table2.getNumRows(); z++)
+			{
+				vector <string> addThisRow;	//row to be added to return table.
+				vector <string> table1row = _table1.getRows()[x];
+				for (int y = 0; y < table1row.size(); y++)
+				{
+					addThisRow.push_back(table1row[y]);
+				}
+
+				vector <string> table2row = _table2.getRows()[z];
+				for (int a = 0; a < table2row.size(); a++)
+				{
+					addThisRow.push_back(table2row[a]);
+				}
+				insertRow(returnTable, addThisRow);
+			}
+		}
+		
+		return returnTable;
+	}
+
+	//return table which contains the rows in both TableA and TableB
+	Table intersection(Table _table1, Table _table2){
+
+		vector<Attribute> attributeList;
+		
+		if (_table1.getAttributes().size() != _table2.getAttributes().size())
+		{
+			//ERROR mismatched attributes
+			cout << "ERROR mismatched attributes" << endl;
+			Attribute ERROR("ERROR", "string");
+			vector<Attribute> attributeList = { ERROR };
+			Table result(attributeList, "ERROR");
+			return result;
+		}
+		
+		attributeList = _table1.getAttributes();
+
+		Table result(attributeList, "result");
+
+		for (int i = 0; i < _table1.getRows().size(); i++)
+		{
+			for (int j = 0; j < _table2.getRows().size(); j++)
+			{
+				int numEqualAttributes = 0;
+				for (int k = 0; k < _table1.getAttributes().size(); k++)
+				{
+					if (_table1.getRows()[i][k] == _table2.getRows()[j][k])
+					{
+						numEqualAttributes++;
+					}
+					if (numEqualAttributes == _table1.getAttributes().size())
+					{
+						result.pushBackRow(_table1.getRows()[i]);
+					}
+				}
+			}
+		}
+		return result;
+	}
 };

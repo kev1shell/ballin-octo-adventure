@@ -1,4 +1,3 @@
-#include "stdafx.h"
 
 #include <stdio.h>
 #include <tchar.h>
@@ -31,6 +30,11 @@ void Attribute::printAttribute(Attribute _att){
 void Attribute::setName(string _name)
 {
 	name = _name;
+}
+
+void Attribute::setType(string _type)
+{
+	type = _type;
 }
 
 void Attribute::setPrimaryKey()

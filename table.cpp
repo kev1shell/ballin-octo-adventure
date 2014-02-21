@@ -1,4 +1,3 @@
-#include "stdafx.h"
 
 #include <stdio.h>
 #include <tchar.h>
@@ -25,6 +24,11 @@ void Table::pushBackRow(vector<string> _newRow)
 		rows.push_back(_newRow);
 	}
 
+}
+
+void Table::pushBackCommand(string _newCmd){
+
+	commandHistory.push_back(_newCmd);
 }
 
 //***************************************************** ACCESSORS **********************************************************
@@ -78,9 +82,19 @@ string Table::attrTypeAt(int loc)
 	return attributes[loc].getType();
 }
 
+vector<string> Table::getRow(int loc)
+{
+	return rows[loc];
+}
+
 vector<vector<string>> Table::getRows()
 {
 	return rows;
+}
+
+vector<Attribute> Table::getAttributes()
+{
+	return attributes;
 }
 //**************************************************** MODIFIERS ***********************************************************
 void Table::setAttrNameAt(int loc, string _newname)
@@ -96,6 +110,11 @@ void Table::updateVal(int rowLoc, int attrLoc, string newValue)
 void Table::deleteRowAtLoc(int rowloc)
 {
 	rows.erase(rows.begin() + rowloc);
+}
+
+void Table::setName(string _name)
+{
+	name = _name;
 }
 
 //**************************************************** PRINT FUNCTIONS *****************************************************
@@ -139,9 +158,10 @@ void Table::printAttVec(Table _table){
 
 Table& Table::operator=(Table& table){
 
-	Table newTable(table.attributes, table.name);
-	newTable.rows = table.rows;
+	name = table.getTableName();
+	attributes = table.getAttributes();
+	rows = table.getRows();
 
-	return newTable;
+	return *this;
 
 }
