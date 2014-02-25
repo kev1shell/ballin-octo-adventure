@@ -84,50 +84,65 @@ Table parser_natural_join(vector <Token> cmd);
 Table atomicExpResolver(vector<Token> tokenList);
 
 //menu functions
-void customerMenu();
+void customerMenu(int customerID);
 void manufacturerMenu();
 void welcome();
 void logIn();
 void registerUser();
+void browseProducts(int customerID);
+void viewCart(int customerID);
+void checkout(int customerID);
+void logInCustomer();
+void logInManufacturer();
+void new_user(int choice);
+void manuOptions(int _manuID);
+void addProduct(int _manuID);
+void removeProduct(int _manuID);
+void browseManuProducts(int _manuID);
+void editInventory(int _manuID);
+void viewInventory(int _manuID);
 
 int main()
 {	
+	vector<string> startCommands;
+	startCommands.push_back("OPEN customer;");
+	startCommands.push_back("OPEN manufacturer;");
+	startCommands.push_back("OPEN product;");
+	startCommands.push_back("OPEN order;");
+	startCommands.push_back("OPEN orderDetail;");
+	startCommands.push_back("OPEN inventory;");
+
+	inputDecoder(startCommands);
+
 	welcome();
 	return 0;
 }
 //Menu Functions
 void welcome(){
+	
+	system("cls");
 	cout << "welcome to Bazaar 1.0" << endl;
 	cout << "Press 1 to access our menus as a customer" << endl;
 	cout << "press 2 to access our menus as a manufacturer" << endl;
+	cout << "press 3 to quit Bazaar" << endl;
 	cin >> userType;
 	if (userType == 1){
-		customerMenu();
+		logInCustomer();
 	}
 	else if (userType == 2){
-		manufacturerMenu();
+		logInManufacturer();
 	}
-}
+	else if (userType == 3){
+		vector<string> startCommands;
+		startCommands.push_back("WRITE customer;");
+		startCommands.push_back("WRITE manufacturer;");
+		startCommands.push_back("WRITE product;");
+		startCommands.push_back("WRITE order;");
+		startCommands.push_back("WRITE orderDetail;");
+		startCommands.push_back("WRITE inventory;");
 
-void customerMenu(){
-	int custMen = 0;
-	cout << "welcome customer" << endl;
-	cout << "press 1 to log in as an existing user" << endl;
-	cout << "press 2 to register as a new user" << endl;
-	cout << "press 3 to return to main menu" << endl;
-	cin >> custMen;
-	if (custMen == 1){
-		logIn();
-	}
-	else if (custMen == 2){
-		registerUser();
-	}
-	else if (custMen == 3){
-		welcome();
-	}
-	else {
-		cout << "invalid input" << endl;
-		welcome();
+		inputDecoder(startCommands);
+		exit(EXIT_SUCCESS);
 	}
 }
 void logIn(){
@@ -136,11 +151,6 @@ void logIn(){
 void registerUser(){
 	cout << "register user" << endl;
 }
-
-void manufacturerMenu(){
-	cout << "Press 1 for inventory Menu Access"
-}
-
 
 
 //Parser Functions
@@ -435,6 +445,7 @@ void inputDecoder(vector<string> testStrings){
 					cout << endl;
 				}
 				paser_updateValue(updateThis);
+				addToCommandHistory("inventory", testStrings[iter]);
 			}
 		}
 
@@ -2932,7 +2943,7 @@ void paser_updateValue(vector<Token> cmd)
 				bool attrExists = false;
 				for (int x = 0; x < allTables[tableloc].getNumAttrs(); x++)
 				{
-					if (cmd[2].content == allTables[tableloc].attrNameAt(x))
+					if (cmd[6].content == allTables[tableloc].attrNameAt(x))
 					{
 						attrExists = true;
 						attrloc = x;
@@ -3332,7 +3343,7 @@ void parser_Write(Table _table){
 	output_file.close();
 }
 void parser_Close(Table _table, int index){
-	parser_Write(_table);
+	//parser_Write(_table);
 	allTables.erase(allTables.begin() + index);
 }
 void parser_Open(string _name){
@@ -3383,5 +3394,991 @@ void addToCommandHistory(string tableName, string cmd){
 	}
 }
 
+void customerMenu(int customerID)
+{
+	int option = 0;
+
+	system("cls");
+	cout << "Cutomer Menu" << endl;
+	cout << endl;
+	cout << "Enter the number of the option you wish to choose" << endl;
+	cout << endl;
+	cout << "1.  Browse Products" << endl;
+	cout << "2.  logout" << endl;
+	cout << endl;
+	cout << ">";
+	if (cin >> option)
+	{
+		switch (option)
+		{
+		case 1:
+			{
+				  browseProducts(customerID);
+				  break;
+			}
+		case 2:
+			{
+				  welcome();
+				  break;
+			}
+		}
+	}
+	else
+	{
+		//error case
+		std::cin.clear();
+		while (std::cin.get() != '\n')
+		{
+			continue;
+		}
+		cout << endl;
+		cout << "Oops! your input was not recognised" << endl;
+		cout << "To select an option, enter the number" << endl;
+		cout << "of the option you wish to choose and " << endl;
+		cout << "press enter." << endl;
+		cout << endl;
+		cout << "" << endl;
+		system("PAUSE");
+		customerMenu(customerID);
+	}
+}
+
+void browseProducts(int customerID)
+{
+	
+	int cartIndex = 0;
+	for (int i = 0; i < allTables.size(); i++)
+	{
+		if (allTables[i].getTableName() == "cart")
+		{
+			cartIndex = i;
+		}
+	}
+	
+	int cartSize = 0;
+	Table products = allTables[2];
+	vector<string> LastProduct = products.getRows()[products.getRows().size()-1];
+
+	int maxId = atoi(LastProduct[1].c_str());
+	
+	system("cls");
+	cout << "Product Browser" << endl;
+	cout << endl;
+	int option = 0;
+	vector<string> commands = { "SHOW product;" };
+	inputDecoder(commands);
+
+	cout << endl;
+	
+	if (cartIndex != 0)
+	{
+		vector<Token> tokenList = tokenizer(0, "cart;");
+		tokenList.erase(tokenList.begin() + 1);
+		cartSize = atomicExpResolver(tokenList).getNumRows();
+	}
+
+	cout << "Items in your cart: " << cartSize << endl;
+	cout << endl;
+	cout << "Enter an option number, or the ID of the product you wish to add to your cart" << endl;
+	cout << endl;
+	cout << (maxId + 1) << ".  View Cart" << endl;
+	cout << (maxId + 2) << ".  Back to Customer Menu" << endl;
+	cout << (maxId + 3) << ".  logout" << endl;
+	cout << endl;
+	cout << ">";
+	if (cin >> option)
+	{
+		if (option == maxId + 1)
+		{
+			if (cartSize > 0)
+			{
+				viewCart(customerID);
+			}
+			else
+			{
+				cout << endl;
+				cout << "Sorry your cart is empty, please add items to your cart before checkout" << endl;
+				cout << endl;
+				system("PAUSE");
+				browseProducts(customerID);
+			}
+		}
+		else if (option == maxId + 2)
+		{
+				  customerMenu(customerID);
+		}
+		else if (option == maxId + 3)
+		{
+				  welcome();
+		}
+		else
+		{
+				   string itemID = int2string(option);
+
+				   if (cartIndex == 0)
+				   {
+					   string qry1 = "CREATE TABLE cart (productName VARCHAR(20), productID INTEGER, manufacturerID INTEGER, price INTEGER, quantity INTEGER) PRIMARY KEY (productID);";
+					   inputDecoder(vector<string> {qry1});
+				   }
+				   
+				   Table result = select(allTables[cartIndex], "productID", "==", itemID);
+				   if (result.getRows().size() > 0)
+				   {
+					   cout << endl;
+					   cout << "This item is already in your cart." << endl;
+					   cout << endl;
+					   system("PAUSE");
+					   browseProducts(customerID);
+						
+				   }
+
+				   Table itemTable = select(allTables[2], "productID", "==", itemID);
+				   vector<string> item = itemTable.getRows()[0];
+				   int quantity = 0;
+				   
+				   system("cls");
+				   cout << "Enter quantity" << endl;
+				   cout << endl;
+				   cout << ">";
+				   if (!(cin >> quantity))
+				   {
+					   //error case
+					   std::cin.clear();
+					   while (std::cin.get() != '\n')
+					   {
+						   continue;
+					   }
+					   cout << endl;
+					   cout << "Oops! your input was not recognised" << endl;
+					   cout << endl;
+					   cout << "" << endl;
+					   system("PAUSE");
+					   customerMenu(customerID);
+				   }
+
+				   string qry2 = "INSERT INTO cart VALUES FROM(\""+item[0]+"\", "+item[1]+", "+item[2]+", "+item[3]+", " + int2string(quantity) + ")"+";";
+				   inputDecoder(vector<string> {qry2});
+				  
+				   system("cls");
+				   cout << "product \"" << itemTable.getRows()[0][0] << "\" has been added to your cart." << endl;
+				   cout << "quantity: " << quantity << endl;
+				   cout << endl;
+				   system("PAUSE");
+
+				   browseProducts(customerID);
+
+		}
+	}
+	else
+	{
+		//error case
+		std::cin.clear();
+		while (std::cin.get() != '\n')
+		{
+			continue;
+		}
+		cout << endl;
+		cout << "Oops! your input was not recognised" << endl;
+		cout << "To select an option, enter the number" << endl;
+		cout << "of the option you wish to choose and " << endl;
+		cout << "press enter." << endl;
+		cout << endl;
+		cout << "" << endl;
+		system("PAUSE");
+		customerMenu(customerID);
+	}
+}
+
+void viewCart(int customerID)
+{
+	int option = 0;
+
+	int cartIndex = 0;
+	for (int i = 0; i < allTables.size(); i++)
+	{
+		if (allTables[i].getTableName() == "cart")
+		{
+			cartIndex = i;
+		}
+	}
+
+	system("cls");
+	cout << "Items in Cart" << endl;
+	cout << endl;
+	string qry = "SHOW cart;";
+	inputDecoder(vector<string> {qry});
+	cout << endl;
+	cout << "Enter the number of the option you wish to choose" << endl;
+	cout << endl;
+	cout << "1.  Continue to Checkout" << endl;
+	cout << "2.  Clear Cart" << endl;
+	cout << "3.  Back to Product Browser" << endl;
+	cout << "4.  logout" << endl;
+	cout << endl;
+	cout << ">";
+	if (cin >> option)
+	{
+		switch (option)
+		{
+		case 1:
+		{
+				  checkout(customerID);
+				  break;
+		}
+		case 2:
+		{
+				  allTables.erase(allTables.begin() + cartIndex);
+				  system("cls");
+				  cout << "Cart cleared." << endl;
+				  cout << endl;
+				  system("PAUSE");
+				  browseProducts(customerID);
+				  break;
+		}
+		case 3:
+		{
+				  browseProducts(customerID);
+				  break;
+		}
+		case 4:
+		{
+				  welcome();
+				  break;
+		}
+		}
+	}
+	else
+	{
+		//error case
+		std::cin.clear();
+		while (std::cin.get() != '\n')
+		{
+			continue;
+		}
+		cout << endl;
+		cout << "Oops! your input was not recognised" << endl;
+		cout << "To select an option, enter the number" << endl;
+		cout << "of the option you wish to choose and " << endl;
+		cout << "press enter." << endl;
+		cout << endl;
+		cout << "" << endl;
+		system("PAUSE");
+		customerMenu(customerID);
+	}
+}
+
+void checkout(int customerID)
+{
+	
+	int option = 0;
+
+	system("cls");
+	cout << "Checkout Menu" << endl;
+	cout << endl;
+	cout << "Enter the number of the option you wish to choose" << endl;
+	cout << endl;
+	cout << "1.  Purchase Items" << endl;
+	cout << "2.  Back to Cart" << endl;
+	cout << "3.  logout" << endl;
+	cout << endl;
+	cout << ">";
+	if (cin >> option)
+	{
+		switch (option)
+		{
+		
+		case 1:
+		{
+				  
+				int cartIndex = 0;
+				for (int i = 0; i < allTables.size(); i++)
+				{
+					if (allTables[i].getTableName() == "cart")
+					{
+						cartIndex = i;
+					}
+				}
+
+				int inventoryIndex = 0;
+				for (int i = 0; i < allTables.size(); i++)
+				{
+					if (allTables[i].getTableName() == "inventory")
+					{
+						inventoryIndex = i;
+					}
+				}
+
+				bool suffiecientInventory = true;
+				vector<int> inventoryIndecies;
+				vector<int> inventoryToRemove;
+				for (int i = 0; i < allTables[cartIndex].rows.size(); i++)
+				{
+					for (int k = 0; k < allTables[inventoryIndex].rows.size(); k++)
+					{
+						if (allTables[cartIndex].rows[i][1] == allTables[inventoryIndex].rows[k][1])
+						{
+							if (atoi(allTables[cartIndex].rows[i][4].c_str()) > atoi(allTables[inventoryIndex].rows[k][3].c_str()))
+							{
+								suffiecientInventory = false;
+							}
+							inventoryIndecies.push_back(k);
+							inventoryToRemove.push_back(atoi(allTables[cartIndex].rows[i][4].c_str()));
+						}
+					}
+				}
+
+				if (suffiecientInventory == false)
+				{
+					system("cls");
+					cout << "Insufficient inventory" << endl;
+					cout << endl;
+
+					allTables.erase(allTables.begin() + cartIndex);
+					system("PAUSE");
+					browseProducts(customerID);
+				}
+				else
+				{
+					for (int i = 0; i < inventoryIndecies.size(); i++)
+					{
+						int oldInventory = atoi(allTables[inventoryIndex].rows[i][3].c_str());
+						int newInventory = oldInventory - inventoryToRemove[i];
+						string productID = allTables[inventoryIndex].rows[i][1];
+						string qry = "UPDATE inventory SET quantity = " + int2string(newInventory) + " WHERE productID == " + productID + " ;";
+						vector<string> cmd = { qry };
+						inputDecoder(cmd);
+						//updateValue(allTables[inventoryIndex], productID, allTables[5].attributes[3], int2string(newInventory));
+					}
+					
+					
 
 
+					allTables.erase(allTables.begin() + cartIndex);
+					system("cls");
+					cout << "Items purchased, thank you." << endl;
+					system("PAUSE");
+					browseProducts(customerID);
+				}
+
+		}
+		case 2:
+		{
+				  viewCart(customerID);
+				  break;
+		}
+		case 3:
+		{
+				  welcome();
+				  break;
+		}
+		}
+	}
+	else
+	{
+		//error case
+		std::cin.clear();
+		while (std::cin.get() != '\n')
+		{
+			continue;
+		}
+		cout << endl;
+		cout << "Oops! your input was not recognised" << endl;
+		cout << "To select an option, enter the number" << endl;
+		cout << "of the option you wish to choose and " << endl;
+		cout << "press enter." << endl;
+		cout << endl;
+		cout << "" << endl;
+		system("PAUSE");
+		customerMenu(customerID);
+	}
+	
+	
+	Table customerTable = select(allTables[0], "customerId", "==", int2string(customerID));
+	vector<string> customer = customerTable.getRows()[0];
+	
+	string orderedFrom = customer[2];
+	string orderID = "0";
+	if (allTables[3].getRows().size() > 0)
+	{
+		vector<vector<string>> rows = allTables[3].getRows();
+		vector<string> lastRow = rows[rows.size() - 1];
+		int maxID = atoi(lastRow[1].c_str()) + 1;
+		orderID = int2string(maxID);
+	}
+
+	string qry = "INSERT INTO order VALUES FROM(\"" + orderedFrom + "\", " + orderID + ", "+ int2string(customerID) +");";
+	inputDecoder(vector<string> {qry});
+
+	Table cart = allTables[5];
+	vector<vector<string>> rows = cart.getRows();
+	for (int i = 0; i < rows.size(); i++)
+	{
+		string orderDetailID = "0";
+		if (allTables[4].getRows().size() > 0)
+		{
+			vector<vector<string>> rowsy = allTables[4].getRows();
+			vector<string> lastRowy = rowsy[rows.size() - 1];
+			int maxIDy = atoi(lastRowy[1].c_str()) + 1;
+			orderDetailID = int2string(maxIDy);
+		}
+		
+		string qry = "INSERT INTO orderDetail VALUES FROM(\"" + customer[2] + "\", " + orderDetailID + ", " + orderID + ", " + rows[i][2] + ", " + rows[i][4] + ", " + int2string(customerID) + ");";
+		inputDecoder(vector<string> {qry});
+	}
+
+
+
+
+}
+
+void logInCustomer()
+{
+	int option = 0;
+
+	system("cls");
+	cout << "Cutomer Log in" << endl;
+	cout << endl;
+	cout << "Enter the number of the option you wish to choose" << endl;
+	cout << endl;
+	cout << "1.  Existing user" << endl;
+	cout << "2.  New user" << endl;
+	cout << "3.  Back to Welcome Menu" << endl;
+	cout << endl;
+	cout << ">";
+	if (cin >> option)
+	{
+		switch (option)
+		{
+		case 1:
+		{
+				  string customerName = "";
+				  string password = "";
+				  system("cls");
+				  cout << "Enter customerName:" << endl;
+				  cout << ">";
+				  if (cin >> customerName)
+				  {
+					  cout << endl;
+					  cout << "Enter password" << endl;
+					  cin >> password;
+					  Table result = select(allTables[0], "customerName", "==", customerName);
+					  if (result.rows.size() > 0)
+					  {
+						  if (password == result.getRows()[0][3])
+						  {
+							  int customerID = atoi(result.getRows()[0][1].c_str());
+							  customerMenu(customerID);
+						  }
+						  else
+						  {
+							  cout << endl;
+							  cout << "Customer name or password incorrect" << endl;
+							  cout << endl;
+							  system("PAUSE");
+							  logInCustomer();
+						  }
+					  }
+					  else
+					  {
+						  cout << endl;
+						  cout << "Customer name or password incorrect" << endl;
+						  cout << endl;
+						  system("PAUSE");
+						  logInCustomer();
+
+					  }
+				  }
+				  else
+				  {
+					  //error case
+					  std::cin.clear();
+					  while (std::cin.get() != '\n')
+					  {
+						  continue;
+					  }
+					  cout << endl;
+					  cout << "Oops! your input was not recognised" << endl;
+					  cout << endl;
+					  system("PAUSE");
+					  logInCustomer();
+				  }
+				  break;
+		}
+		case 2:
+		{
+				  new_user(1);
+				  break;
+		}
+		case 3:
+		{
+				  welcome();
+				  break;
+		}
+		}
+	}
+	else
+	{
+		//error case
+		std::cin.clear();
+		while (std::cin.get() != '\n')
+		{
+			continue;
+		}
+		cout << endl;
+		cout << "Oops! your input was not recognised" << endl;
+		cout << "To select an option, enter the number" << endl;
+		cout << "of the option you wish to choose and " << endl;
+		cout << "press enter." << endl;
+		cout << endl;
+		cout << "" << endl;
+		system("PAUSE");
+		logInCustomer();
+	}
+}
+
+void logInManufacturer()
+{
+	int option = 0;
+
+	system("cls");
+	cout << "Manufacturer Log in" << endl;
+	cout << endl;
+	cout << "Enter the number of the option you wish to choose" << endl;
+	cout << endl;
+	cout << "1.  Existing user" << endl;
+	cout << "2.  New user" << endl;
+	cout << "3.  Back to Welcome Menu" << endl;
+	cout << endl;
+	cout << ">";
+	if (cin >> option)
+	{
+		switch (option)
+		{
+		case 1:
+		{
+				  string manufacturerName = "";
+				  string password = "";
+				  system("cls");
+				  cout << "Enter manufacturerName:" << endl;
+				  cout << ">";
+				  if (cin >> manufacturerName)
+				  {
+					  cout << endl;
+					  cout << "Enter password" << endl;
+					  cin >> password;
+					  Table result = select(allTables[1], "userName", "==", manufacturerName);
+					  if (result.rows.size() > 0)
+					  {
+						  if (password == result.getRows()[0][2])
+						  {
+							  int manufacturerID = atoi(result.getRows()[0][1].c_str());
+							  manuOptions(manufacturerID);
+						  }
+						  else
+						  {
+							  cout << endl;
+							  cout << "Manufacturer name or password incorrect" << endl;
+							  cout << endl;
+							  system("PAUSE");
+							  logInManufacturer();
+						  }
+					  }
+					  else
+					  {
+						  cout << endl;
+						  cout << "Manufacturer name or password incorrect" << endl;
+						  cout << endl;
+						  system("PAUSE");
+						  logInManufacturer();
+
+					  }
+				  }
+				  else
+				  {
+					  //error case
+					  std::cin.clear();
+					  while (std::cin.get() != '\n')
+					  {
+						  continue;
+					  }
+					  cout << endl;
+					  cout << "Oops! your input was not recognised" << endl;
+					  cout << endl;
+					  system("PAUSE");
+					  logInManufacturer();
+				  }
+				  break;
+		}
+		case 2:
+		{
+				  new_user(2);
+				  break;
+		}
+		case 3:
+		{
+				  welcome();
+				  break;
+		}
+		}
+	}
+	else
+	{
+		//error case
+		std::cin.clear();
+		while (std::cin.get() != '\n')
+		{
+			continue;
+		}
+		cout << endl;
+		cout << "Oops! your input was not recognised" << endl;
+		cout << "To select an option, enter the number" << endl;
+		cout << "of the option you wish to choose and " << endl;
+		cout << "press enter." << endl;
+		cout << endl;
+		cout << "" << endl;
+		system("PAUSE");
+		logInCustomer();
+	}
+}
+
+void new_user(int choice)
+{
+	system("cls");
+
+	if (choice == 1)
+	{
+		string user_name;
+		string password;
+		string state_live_in;
+		cout << "What is the customers username:" << endl;
+		cin >> user_name;
+		cout << "What is the customers password:" << endl;
+		cin >> password;
+		cout << "What state does the customer live in:" << endl;
+		cin >> state_live_in;
+		cout << "The customers username is  " << user_name << " The customers password is  " << password << " The customers lives in  " << state_live_in << endl;
+			
+		string maxID = "0";
+		maxID = allTables[0].getRows()[allTables[0].getRows().size() - 1][1];
+		int customerID = atoi(maxID.c_str()) + 1;
+
+		string qry2 = "INSERT INTO customer VALUES FROM(\"" + user_name + "\", " + int2string(customerID) + ", \"" + state_live_in + "\", \"" + password + "\")" + ";";
+		inputDecoder(vector<string> {qry2});
+
+		system("cls");
+		cout << "Congrats! you are now registered!" << endl;
+		cout << endl;
+		system("PAUSE");
+		customerMenu(customerID);
+
+	}
+	else if (choice == 2)
+	{
+		string user_name;
+		string password;
+		cout << "What is the manufacturer username:" << endl;
+		cin >> user_name;
+		cout << "What is the manufacturer password:" << endl;
+		cin >> password;
+		cout << "The manufacturer username is  " << user_name << " The manufacturer password is  " << password << endl;
+
+		string maxID = "0";
+		maxID = allTables[1].getRows()[allTables[1].getRows().size() - 1][1];
+		int manufacturerID = atoi(maxID.c_str()) + 1;
+
+		string qry2 = "INSERT INTO manufacturer VALUES FROM(\"" + user_name + "\", " + int2string(manufacturerID) + ", \"" + password + "\")" + ";";
+		inputDecoder(vector<string> {qry2});
+
+		system("cls");
+		cout << "Congrats! you are now registered!" << endl;
+		cout << endl;
+		system("PAUSE");
+		manuOptions(manufacturerID);
+
+	}
+	else if (choice != 1 && choice != 2)
+	{
+		choice = 0;
+	}
+}
+
+
+void addProduct(int _manuID){
+	system("cls");
+	string prodName;
+	string quant;
+
+	string productID = "123";
+	int maxID = 0;
+	maxID = atoi(allTables[2].getRows()[allTables[2].getRows().size() - 1][1].c_str());
+	string newID = int2string(maxID + 1);
+	productID = newID;
+
+	string price;
+	string manu_id = int2string(_manuID);
+	cout << "Please input the name of the product " << endl;
+	cin >> prodName;
+	cout << "Please input the price you wish to sell it at" << endl;
+	cin >> price;
+	cout << "How many do you have on hand" << endl;
+	cin >> quant;
+
+
+
+	string cmd = "INSERT INTO product VALUES FROM(\"" + prodName + "\", " + productID + ", " + manu_id + ", " + price + ");";
+	string cmd1 = "INSERT INTO inventory VALUES FROM(\"" + prodName + "\"," + productID + ", " + manu_id + ", " + quant + ");";
+	vector<string> thisString = { cmd, cmd1 };
+	thisString.push_back("WRITE product;");
+	thisString.push_back("WRITE inventory;");
+	inputDecoder(thisString);
+	system("cls");
+	cout << "please select an option: " << endl;
+	cout << "1.  add Another Product" << endl;
+	cout << "2.  Browse Products" << endl;
+	cout << "3.  log out" << endl;
+	int choice = 0;
+	if (cin >> choice){
+		switch (choice){
+		case 1:
+		{
+				  addProduct(_manuID);
+		}
+		case 2:
+		{
+				  browseManuProducts(_manuID);
+		}
+		case 3:
+		{
+				  welcome();
+		}
+		}
+
+
+	}
+	else{
+		cout << "input not recognized" << endl;
+		manuOptions(_manuID);
+	}
+}
+
+void editInventory(int _manuID){
+	int pid;
+	int quant;
+	system("cls");
+	cout << "please input ID of the product you would like to update inventory quantity of" << endl;
+	cin >> pid;
+	cout << "please input the new quantity" << endl;
+	cin >> quant;
+	string manu_id = int2string(_manuID);
+	string id = int2string(pid);
+	string quants = int2string(quant);
+	vector<string> cmds;
+	//updateValue(allTables[5], id, allTables[5].attributes[3], quants);
+	cmds.push_back("UPDATE inventory SET quantity = " + quants + " WHERE productID == " + id + ";");
+	cmds.push_back("WRITE inventory;");
+	inputDecoder(cmds);
+
+	manuOptions(_manuID);
+
+}
+
+void browseManuProducts(int _manuID){
+	system("cls");
+	int choose;
+	vector<string> startCommands;
+	startCommands.push_back("WRITE customer;");
+	startCommands.push_back("WRITE manufacturer;");
+	startCommands.push_back("WRITE product;");
+	startCommands.push_back("WRITE order;");
+	startCommands.push_back("WRITE orderDetail;");
+	startCommands.push_back("WRITE inventory;");
+
+	startCommands.push_back("CLOSE customer;");
+	startCommands.push_back("CLOSE manufacturer;");
+	startCommands.push_back("CLOSE product;");
+	startCommands.push_back("CLOSE order;");
+	startCommands.push_back("CLOSE orderDetail;");
+	startCommands.push_back("CLOSE inventory;");
+
+	startCommands.push_back("OPEN customer;");
+	startCommands.push_back("OPEN manufacturer;");
+	startCommands.push_back("OPEN product;");
+	startCommands.push_back("OPEN order;");
+	startCommands.push_back("OPEN orderDetail;");
+	startCommands.push_back("OPEN inventory;");
+
+	inputDecoder(startCommands);
+	system("cls");
+	vector<string> decode;
+	decode.push_back("SHOW product;");
+	inputDecoder(decode);
+	cout << "press 1 to return to manufacturer menu" << endl;
+	cout << "press 2 to log out" << endl;
+	cin >> choose;
+	if (choose == 1){
+		manuOptions(_manuID);
+	}
+	if (choose == 2){
+		welcome();
+	}
+}
+void removeProduct(int _manuID){
+	system("cls");
+	string prodName;
+	string manu_id = int2string(_manuID);
+	cout << "Please input the name of the product you wish to remove " << endl;
+	cin >> prodName;
+
+	string cmd = "DELETE FROM product WHERE(\"manufacturerID ==" + manu_id + " && productName ==\"" + prodName + "\");";
+	vector<string> thisString = { cmd };
+	thisString.push_back("WRITE product;");
+	inputDecoder(thisString);
+	system("cls");
+	cout << "please select an option: " << endl;
+	cout << "1.  add Another Product" << endl;
+	cout << "2.  Browse Products" << endl;
+	cout << "3.  log out" << endl;
+	int choice = 0;
+	if (cin >> choice){
+		switch (choice){
+		case 1:
+		{
+				  addProduct(_manuID);
+		}
+		case 2:
+		{
+				  browseManuProducts(_manuID);
+		}
+		case 3:
+		{
+				  welcome();
+		}
+		}
+
+
+	}
+	else{
+		cout << "input not recognized" << endl;
+		manuOptions(_manuID);
+	}
+}
+
+void viewInventory(int _manuID){
+	system("cls");
+	string id = int2string(_manuID);
+	int blah = 0;
+	string c1 = "inven <- project(productName, quantity)(select(manufacturerID == " + id + ") inventory);";
+	vector<string> cmd;
+	vector<string> startCommands;
+	startCommands.push_back("WRITE customer;");
+	startCommands.push_back("WRITE manufacturer;");
+	startCommands.push_back("WRITE product;");
+	startCommands.push_back("WRITE order;");
+	startCommands.push_back("WRITE orderDetail;");
+	startCommands.push_back("WRITE inventory;");
+
+	startCommands.push_back("CLOSE customer;");
+	startCommands.push_back("CLOSE manufacturer;");
+	startCommands.push_back("CLOSE product;");
+	startCommands.push_back("CLOSE order;");
+	startCommands.push_back("CLOSE orderDetail;");
+	startCommands.push_back("CLOSE inventory;");
+
+	startCommands.push_back("OPEN customer;");
+	startCommands.push_back("OPEN manufacturer;");
+	startCommands.push_back("OPEN product;");
+	startCommands.push_back("OPEN order;");
+	startCommands.push_back("OPEN orderDetail;");
+	startCommands.push_back("OPEN inventory;");
+	cmd.push_back(c1);
+	//	cmd.push_back("SHOW inven;");
+	inputDecoder(cmd);
+	cout << "press 1 to return to manufacturer options" << endl;
+	cout << "press 2 to log out" << endl;
+	cin >> blah;
+	cmd.clear();
+	cmd.push_back("CLOSE inven;");
+	inputDecoder(cmd);
+	if (blah == 1) {
+		manuOptions(_manuID);
+	}
+	else if (blah == 2){
+		welcome();
+	}
+	else {
+		cout << "error in input" << endl;
+
+	}
+
+
+
+}
+
+void manuOptions(int _manuID){
+	system("cls");
+	int choice = 0;
+	cout << "Manufacturer Menu" << endl << endl;
+	cout << "please input the number of the option you wish to choose " << endl;
+	cout << "1.  Add a product" << endl;
+	cout << "2.  Remove a product" << endl;
+	cout << "3.  Browse Products" << endl;
+	cout << "4.  Edit Inventory" << endl;
+	cout << "5.  View Inventory" << endl;
+	cout << "6.  Log Out" << endl;
+	if (cin >> choice)
+	{
+		switch (choice)
+		{
+		case 1:
+		{
+				  addProduct(_manuID);
+				  break;
+		}
+		case 2:
+		{
+				  removeProduct(_manuID);
+				  break;
+		}
+		case 3:
+		{
+				  browseManuProducts(_manuID);
+				  break;
+		}
+		case 4:
+		{
+				  editInventory(_manuID);
+				  break;
+		}
+		case 5:
+		{
+				  viewInventory(_manuID);
+				  break;
+		}
+		case 6:
+		{
+				  welcome();
+				  break;
+		}
+		}
+	}
+	else
+	{
+		//error case
+		std::cin.clear();
+		while (std::cin.get() != '\n')
+		{
+			continue;
+		}
+		cout << endl;
+		cout << "Oops! your input was not recognised" << endl;
+		cout << "To select an option, enter the number" << endl;
+		cout << "of the option you wish to choose and " << endl;
+		cout << "press enter." << endl;
+		cout << endl;
+		cout << "" << endl;
+		system("PAUSE");
+		manuOptions(_manuID);
+	}
+
+
+}

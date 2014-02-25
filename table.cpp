@@ -138,7 +138,18 @@ void Table::printRow(vector<string> _row){
 	vector<string> rower = _row;
 	numElems = rower.size();
 	for (int q = 0; q < numElems; q++){
-		cout << rower[q] << "     ";
+
+		cout << rower[q];
+
+		if (attributes[q].getName().size() > rower[q].size())
+		{
+			for (int i = rower[q].size(); i < attributes[q].getName().size(); i++)
+			{
+				cout << " ";
+			}
+		}
+
+		cout << "     ";
 
 	}
 

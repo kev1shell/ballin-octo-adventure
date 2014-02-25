@@ -552,7 +552,8 @@ namespace dbmsFunctions{
 			}
 		}
 
-		_table.updateVal(rowloc, attrloc, newValue);
+		//_table.updateVal(rowloc, attrloc, newValue);
+		_table.rows[rowloc][3] = newValue;
 	}
 
 	//inserts one row into a table
